@@ -3,21 +3,21 @@
 # Some settings may impact device functionality. See link above for details
 
 # Uncomment some or all of these to enable the optional hardware interfaces
-#dtparam=i2c_arm=on
+# dtparam=i2c_arm=on
 #dtparam=i2s=on
 #dtparam=spi=on
 
 # Enable audio (loads snd_bcm2835)
-dtparam=audio=on
+# dtparam=audio=on
 
 # Additional overlays and parameters are documented
 # /boot/firmware/overlays/README
 
 # Automatically load overlays for detected cameras
-camera_auto_detect=1
+# camera_auto_detect=1
 
 # Automatically load overlays for detected DSI displays
-display_auto_detect=1
+# display_auto_detect=1
 
 # Automatically load initramfs files, if found
 auto_initramfs=1
@@ -49,3 +49,18 @@ otg_mode=1
 dtoverlay=dwc2,dr_mode=host
 
 [all]
+
+# Reachy mini specifics
+# Enable UART3
+dtoverlay=uart3
+enable_uart=1
+# Wifi antenna
+dtparam=ant2
+# Fan i2c
+dtparam=i2c_vc=on
+dtoverlay=i2c-fan,emc2301,i2c_csi_dsi,midtemp=45000,maxtemp=65000
+# Camera
+dtoverlay=imx708,cam1
+dtoverlay=imx708,cam0
+# IMU
+dtoverlay=i2c4,pins_8_9=1
