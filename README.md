@@ -1,5 +1,9 @@
 # pi-gen
 
+run `sudo ./build.sh` to build a ReachyMini OS. The generated image will be located in `deploy`.
+
+**forked from https://github.com/RPi-Distro/pi-gen**
+
 Tool used to create Raspberry Pi OS images, and custom images based on Raspberry Pi OS,
 which was in turn derived from the Raspbian project.
 
