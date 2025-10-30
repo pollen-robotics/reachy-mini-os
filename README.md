@@ -1,6 +1,11 @@
 # pi-gen
 
-run `sudo ./build.sh` to build a ReachyMini OS. The generated image will be located in `deploy`.
+Run `sudo ./build.sh` to build a ReachyMini OS. The generated image will be located in the `deploy` directory.
+
+In summary, the modified files are:
+- `config`: main configuration
+- `stage2/01-sys-tweaks/00-packages-nr`: apt packages
+- `stage2/05-reachy-mini/*`: Python environment and daemon installation
 
 **forked from https://github.com/RPi-Distro/pi-gen**
 
