@@ -33,4 +33,5 @@ mkdir -p /restore
 cp -r /venvs/mini_daemon/ /restore
 echo "Restore state set up."
 
-
+echo "Loading I2C kernel module on boot..."
+grep -qxF "i2c-dev" /etc/modules-load.d/modules.conf || echo "i2c-dev" >> /etc/modules-load.d/modules.conf
