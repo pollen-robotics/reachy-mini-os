@@ -1,0 +1,33 @@
+name: Generate ReachyMini OS Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 3-generate-image-with-ci
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y coreutils quilt parted qemu-user-static debootstrap zerofree zip \
+            dosfstools e2fsprogs libarchive-tools libcap2-bin grep rsync xz-utils file git curl bc \
+            gpg pigz xxd arch-test bmap-tools kmod
+
+      - name: Make build.sh executable
+        run: chmod +x build.sh
+
+      - name: Build ReachyMini OS image
+        run: sudo ./build.sh
+
+      - name: Upload generated image
+        uses: actions/upload-artifact@v4
+        with:
+          name: reachyminios-image
+          path: deploy/*
