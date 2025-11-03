@@ -1,19 +1,27 @@
 #!/bin/bash
 
+echo "Installing UV tool..."
+rm -Rf /opt/uv
+mkdir -p /opt/uv
+chown -R pollen:pollen /opt/uv
+runuser -u pollen -- curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/opt/uv" sh
+source /opt/uv/env
+
 echo "Creating Python virtual environment..."
 rm -Rf /venvs
-sudo mkdir /venvs
-sudo chown -R pollen:pollen /venvs
+mkdir /venvs
+chown -R pollen:pollen /venvs
 cd /venvs
-python -m venv mini_daemon
+runuser -u pollen -- uv venv mini_daemon --python 3.12
 source mini_daemon/bin/activate
 
 echo "Installing Reachy Mini daemon..."
-pip install --upgrade --force-reinstall --no-cache-dir "git+https://github.com/pollen-robotics/reachy_mini.git@prepare-wireless-version-2#egg=reachy_mini[wireless-version]"
+uv pip install --force-reinstall "git+https://github.com/pollen-robotics/reachy_mini.git@prepare-wireless-version-2#egg=reachy_mini[wireless-version]"
 
+mkdir -p /bluetooth
 
-bash /venvs/mini_daemon/lib/python3.13/site-packages/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh
-bash /venvs/mini_daemon/lib/python3.13/site-packages/reachy_mini/daemon/app/services/wireless/install_service.sh
+bash /venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh
+bash /venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/wireless/install_service.sh
 
 for service in /etc/systemd/system/reachy-mini-daemon.service \
                /etc/systemd/system/reachy-mini-bluetooth.service; do
@@ -22,12 +30,10 @@ for service in /etc/systemd/system/reachy-mini-daemon.service \
     fi
 done
 
-#echo "Enabling wifi activation service..."
-#ln -fs /etc/systemd/system/reachy-mini-activate-wifi.service /etc/systemd/system/multi-user.target.wants/reachy-mini-activate-wifi.service
-
 echo "Setting up restore state..."
-mkdir -p /restore/mini_daemon
-cp -r /venvs/mini_daemon/ /restore/mini_daemon
+mkdir -p /restore
+cp -r /venvs/mini_daemon/ /restore
 echo "Restore state set up."
 
-
+echo "Loading I2C kernel module on boot..."
+grep -qxF "i2c-dev" /etc/modules-load.d/modules.conf || echo "i2c-dev" >> /etc/modules-load.d/modules.conf
