@@ -18,6 +18,8 @@ source mini_daemon/bin/activate
 echo "Installing Reachy Mini daemon..."
 uv pip install --force-reinstall "git+https://github.com/pollen-robotics/reachy_mini.git@prepare-wireless-version-2#egg=reachy_mini[wireless-version]"
 
+mkdir -p /bluetooth
+
 bash /venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh
 bash /venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/wireless/install_service.sh
 
