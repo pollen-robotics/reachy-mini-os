@@ -4,8 +4,11 @@ Run `sudo ./build.sh` to build a ReachyMini OS. The generated image will be loca
 
 In summary, the modified files are:
 - `config`: main configuration
+- `stage1/00-boot-files/files.config.txt`: hardware functionnalities
 - `stage2/01-sys-tweaks/00-packages-nr`: apt packages
 - `stage2/05-reachy-mini/*`: Python environment and daemon installation
+
+A release can be easily created by pushing a tag 'vx.x.x'. Any other tag will build an image with the artifacts available in the Actions section.
 
 **forked from https://github.com/RPi-Distro/pi-gen**
 

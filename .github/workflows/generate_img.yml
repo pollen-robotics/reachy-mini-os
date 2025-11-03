@@ -1,0 +1,60 @@
+name: Generate ReachyMini OS Image
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+            lfs: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y coreutils quilt parted qemu-user-static debootstrap zerofree zip \
+            dosfstools e2fsprogs libarchive-tools libcap2-bin grep rsync xz-utils file git curl bc \
+            gpg pigz xxd arch-test bmap-tools kmod
+
+      - name: Set TAG environment variable from git tag
+        id: set_tag
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Update stage2/05-reachy-mini/00-run.sh to use TAG
+        run: |
+            sed -i "s/ReachyMiniOS: dev/ReachyMiniOS: ${{ env.TAG }}/g" stage2/05-reachy-mini/00-run.sh
+
+      - name: Make build.sh executable
+        run: chmod +x build.sh
+
+      - name: Build ReachyMini OS image
+        run: sudo ./build.sh
+
+      - name: Rename deploy files with tag
+        run: |
+          for f in deploy/*.*; do
+            ext="${f##*.}"
+            base="${f%.*}"
+            sudo mv "$f" "${base}-${TAG}.${ext}"
+          done
+        env:
+          TAG: ${{ env.TAG }}
+
+      - name: Upload generated image
+        uses: actions/upload-artifact@v4
+        with:
+            name: reachyminios-image-${{ env.TAG }}
+            path: deploy/*
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+        with:
+            files: deploy/*
+            generate_release_notes: true
