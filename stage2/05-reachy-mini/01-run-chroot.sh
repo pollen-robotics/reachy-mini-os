@@ -15,13 +15,18 @@ cd /venvs
 runuser -u pollen -- uv venv mini_daemon --python 3.12
 source mini_daemon/bin/activate
 
+echo "Cloning reachy-mini repository..."
+runuser -u pollen -- git clone -b prepare-wireless-version-2 https://github.com/pollen-robotics/reachy_mini.git /venvs/src/reachy_mini
+runuser -u pollen -- git lfs install
+runuser -u pollen -- pushd /venvs/src/reachy_mini && git lfs pull && popd
+
 echo "Installing Reachy Mini daemon..."
-uv pip install --force-reinstall "git+https://github.com/pollen-robotics/reachy_mini.git@prepare-wireless-version-2#egg=reachy_mini[wireless-version]"
+uv pip install --force-reinstall "-e /venvs/src/reachy_mini[wireless-version]"
 
 mkdir -p /bluetooth
 
-bash /venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh
-bash /venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/wireless/install_service.sh
+bash /venvs/src/reachy_mini/src/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh
+bash /venvs/src/reachy_mini/src/reachy_mini/daemon/app/services/wireless/install_service.sh
 
 for service in /etc/systemd/system/reachy-mini-daemon.service \
                /etc/systemd/system/reachy-mini-bluetooth.service; do
@@ -39,7 +44,7 @@ rm -rf /tmp/respeaker_tools
 
 echo "Setting up restore state..."
 mkdir -p /restore
-cp -r /venvs/mini_daemon/ /restore
+cp -r /venvs /restore/
 echo "Restore state set up."
 
 echo "Loading I2C kernel module on boot..."
