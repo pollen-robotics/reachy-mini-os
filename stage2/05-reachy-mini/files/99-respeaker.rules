@@ -1,0 +1,2 @@
+# usb 4mic array
+SUBSYSTEM=="usb", ATTR{idVendor}=="2886", ATTR{idProduct}=="001a", MODE="0666"
