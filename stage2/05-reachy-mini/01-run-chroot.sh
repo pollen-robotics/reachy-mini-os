@@ -37,7 +37,7 @@ done
 
 echo "Setting up restore state..."
 mkdir -p /restore
-cp -r /venvs/mini_daemon/ /restore
+cp -r /venvs/ /restore/
 echo "Restore state set up."
 
 echo "Loading I2C kernel module on boot..."
