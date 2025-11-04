@@ -10,6 +10,8 @@ In summary, the modified files are:
 
 A release can be easily created by pushing a tag 'vx.x.x'. Any other tag will build an image with the artifacts available in the Actions section.
 
+The branch arm64 is used for sync with the main repo. Please fork and merge to develop to contribute to this repo.
+
 **forked from https://github.com/RPi-Distro/pi-gen**
 
 Tool used to create Raspberry Pi OS images, and custom images based on Raspberry Pi OS,
