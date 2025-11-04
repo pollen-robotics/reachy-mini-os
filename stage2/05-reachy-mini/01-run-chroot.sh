@@ -25,8 +25,8 @@ uv pip install --force-reinstall "-e /venvs/src/reachy_mini[wireless-version]"
 
 mkdir -p /bluetooth
 
-bash /venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh
-bash /venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/wireless/install_service.sh
+bash /venvs/src/reachy_mini/src/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh
+bash /venvs/src/reachy_mini/src/reachy_mini/daemon/app/services/wireless/install_service.sh
 
 for service in /etc/systemd/system/reachy-mini-daemon.service \
                /etc/systemd/system/reachy-mini-bluetooth.service; do
