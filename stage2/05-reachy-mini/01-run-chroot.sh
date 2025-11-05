@@ -22,6 +22,7 @@ git checkout c90cb184e05c9c6ef29840da73afed2803f7efb3
 
 echo "Installing Reachy Mini daemon..."
 uv sync --active --project /venvs/src/reachy_mini --reinstall --extra wireless-version --extra gstreamer
+uv pip install rustypot
 
 mkdir -p /bluetooth
 
