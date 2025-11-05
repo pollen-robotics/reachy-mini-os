@@ -170,6 +170,33 @@ else
 	echo -e "Image validation FAILED. \e[31m✘\e[0m"
 fi
 
+# Check Xl330 devices with rustypot
+echo "Testing Xl330 devices with rustypot..."
+source /venvs/mini_daemon/bin/activate
+PYTHON_SCRIPT="/tmp/xl330_ping_test.py"
+cat << 'EOF' > $PYTHON_SCRIPT
+from rustypot import Xl330PyController
+import sys
+
+controller = Xl330PyController('/dev/ttyAMA3', 1000000, 0.5)
+ids = [10, 11, 12, 13, 14, 15, 16, 17, 18]
+success = True
+for id in ids:
+	result = controller.ping(id)
+	print(f'ID {id}: {result}')
+	if not result:
+		success = False
+sys.exit(0 if success else 1)
+EOF
+
+if python3 $PYTHON_SCRIPT > /tmp/xl330_ping_result.txt 2>&1; then
+	echo -e "OK: All Xl330 devices responded to ping. \e[32m✔\e[0m"
+else
+	echo -e "ERROR: One or more Xl330 devices did not respond to ping. See /tmp/xl330_ping_result.txt \e[31m✘\e[0m"
+	cat /tmp/xl330_ping_result.txt
+	EXIT_CODE=1
+fi
+rm -f $PYTHON_SCRIPT
 
 exit $EXIT_CODE
 
