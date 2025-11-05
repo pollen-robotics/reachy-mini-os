@@ -16,12 +16,11 @@ runuser -u pollen -- uv venv mini_daemon --python 3.12
 source mini_daemon/bin/activate
 
 echo "Cloning reachy-mini repository..."
-runuser -u pollen -- git clone -b v1.1.0rc1 https://github.com/pollen-robotics/reachy_mini.git /venvs/src/reachy_mini
-runuser -u pollen -- git lfs install
-runuser -u pollen -- pushd /venvs/src/reachy_mini && git lfs pull && popd
+git clone https://github.com/pollen-robotics/reachy_mini.git /venvs/src/reachy_mini
+cd /venvs/src/reachy_mini
+git checkout c90cb184e05c9c6ef29840da73afed2803f7efb3
 
 echo "Installing Reachy Mini daemon..."
-#uv pip install --force-reinstall "-e /venvs/src/reachy_mini[wireless-version,gstreamer]"
 uv sync --active --project /venvs/src/reachy_mini --reinstall --extra wireless-version --extra gstreamer
 
 mkdir -p /bluetooth
