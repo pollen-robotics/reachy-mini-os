@@ -152,6 +152,18 @@ if [ $FOUND_MODULE -eq 0 ]; then
 	EXIT_CODE=1
 fi
 
+## Check daemon API status
+DAEMON_API_URL="http://127.0.0.1:8000/api/daemon/status"
+API_RESPONSE=$(curl -s -X 'GET' "$DAEMON_API_URL" -H 'accept: application/json')
+WIRELESS_VERSION=$(echo "$API_RESPONSE" | grep -o '"wireless_version":true')
+ERROR_NULL=$(echo "$API_RESPONSE" | grep -o '"error":null')
+if [ -n "$WIRELESS_VERSION" ] && [ -n "$ERROR_NULL" ]; then
+	echo -e "OK: Daemon API wireless_version is true and error is null. \e[32m✔\e[0m"
+else
+	echo -e "ERROR: Daemon API check failed. Response: $API_RESPONSE \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
+
 if [ $EXIT_CODE -eq 0 ]; then
 	echo -e "Image validation PASSED. \e[32m✔\e[0m"
 else
