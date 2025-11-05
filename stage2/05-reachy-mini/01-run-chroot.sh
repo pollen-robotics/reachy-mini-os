@@ -39,7 +39,7 @@ echo "Installing ReSpeaker XVF3800 USB 4-Mic Array tools..."
 git clone https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY.git /tmp/respeaker_tools
 cp -r /tmp/respeaker_tools/host_control/rpi_64bit /opt/xvf_host_rpi_64bit
 chown pollen:pollen /opt/xvf_host_rpi_64bit
-echo 'export PATH=$PATH:/opt/xvf_host_rpi_64bit' >> /home/pollen/.bashrc
+echo 'export PATH=$PATH:/opt/xvf_host_rpi_64bit:/opt/uv' >> /home/pollen/.bashrc
 rm -rf /tmp/respeaker_tools
 
 echo "Setting up restore state..."
