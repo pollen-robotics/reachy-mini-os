@@ -18,11 +18,11 @@ source mini_daemon/bin/activate
 echo "Cloning reachy-mini repository..."
 git clone https://github.com/pollen-robotics/reachy_mini.git /venvs/src/reachy_mini
 cd /venvs/src/reachy_mini
-git checkout c90cb184e05c9c6ef29840da73afed2803f7efb3
+git checkout 377-update-uv-lock
 chown -R pollen:pollen /venvs/src/
 
 echo "Installing Reachy Mini daemon..."
-uv sync --active --project /venvs/src/reachy_mini --reinstall --extra wireless-version --extra gstreamer
+uv sync --frozen --active --project /venvs/src/reachy_mini --reinstall --extra wireless-version --extra gstreamer
 uv pip install rustypot
 
 mkdir -p /bluetooth
