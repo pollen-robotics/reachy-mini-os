@@ -240,6 +240,44 @@ else
 fi
 rm -f $PYTHON_SCRIPT
 
+# Check IMU
+echo "Testing IMU..."
+# Check we find 0x18 and 0x69 on i2c bus 4
+IMU_I2C_ADDRESSES=("18" "69")
+FOUND_ALL=1
+for addr in "${IMU_I2C_ADDRESSES[@]}"; do
+	if i2cdetect -y 4 | grep -q "$addr"; then
+	echo -e "OK: IMU device found at address $addr on i2c bus 4. \e[32m✔\e[0m"
+	else
+	echo -e "ERROR: IMU device not found at address $addr on i2c bus 4. \e[31m✘\e[0m"
+		FOUND_ALL=0
+		EXIT_CODE=1
+	fi
+done
+if [ $FOUND_ALL -eq 1 ]; then
+	source /venvs/mini_daemon/bin/activate
+	PYTHON_SCRIPT="/tmp/imu_test.py"
+
+	cat << 'EOF' > $PYTHON_SCRIPT
+from bmi088 import BMI088
+
+imu = BMI088(4)
+print("Accelerometer data:", imu.read_accelerometer())
+print("Gyroscope data:", imu.read_gyroscope())
+print("Temperature data:", imu.read_temperature())
+EOF
+
+	if python3 $PYTHON_SCRIPT > /tmp/imu_result.txt 2>&1; then
+		echo -e "OK: IMU tests passed. \e[32m✔\e[0m"
+	else
+		echo -e "ERROR: IMU tests failed. See /tmp/imu_result.txt \e[31m✘\e[0m"
+		cat /tmp/imu_result.txt
+		EXIT_CODE=1
+	fi
+	rm -f $PYTHON_SCRIPT
+fi
+
+# Print final result
 if [ $EXIT_CODE -eq 0 ]; then
 	echo -e "Image validation PASSED. \e[32m✔\e[0m"
 else
@@ -247,4 +285,3 @@ else
 fi
 
 exit $EXIT_CODE
-
