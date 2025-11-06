@@ -14,3 +14,7 @@ rm ${ROOTFS_DIR}/home/pollen/VERSION.txt
 echo "ReachyMiniOS: dev" > ${ROOTFS_DIR}/home/pollen/VERSION.txt
 echo "Created on: $(date '+%Y-%m-%d')" >> ${ROOTFS_DIR}/home/pollen/VERSION.txt
 echo "VERSION.txt created."
+
+echo "Installing verification script..."
+cp files/reachyminios_check.sh ${ROOTFS_DIR}/usr/local/bin/reachyminios_check
+chmod +x ${ROOTFS_DIR}/usr/local/bin/reachyminios_check
