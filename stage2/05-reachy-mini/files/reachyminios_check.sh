@@ -62,6 +62,42 @@ else
 	EXIT_CODE=1
 fi
 
+# Test ReSpeaker audio output
+echo "Testing ReSpeaker audio output..."
+CARD_NUM=$(aplay -l | awk '/reSpeaker XVF3800 4-Mic Array/ {for(i=1;i<=NF;i++) if ($i=="card") {val=$(i+1); sub(":$", "", val); print val}}' | head -n1)
+if [ -n "$CARD_NUM" ]; then
+	echo -e "OK: Found ReSpeaker audio card number: $CARD_NUM \e[32m✔\e[0m"
+	# Set volume to 100% before testing
+	if amixer -c $CARD_NUM sset 'PCM' 100% > /dev/null 2>&1; then
+		echo -e "OK: Set volume to 100% for card $CARD_NUM \e[32m✔\e[0m"
+	else
+		echo -e "ERROR: Failed to set volume for card $CARD_NUM \e[31m✘\e[0m"
+		EXIT_CODE=1
+	fi
+	echo "Playing test sound..."
+	timeout 2s speaker-test -Dplughw:$CARD_NUM > /tmp/speaker_test.txt 2>&1
+else
+	echo -e "ERROR: ReSpeaker audio card not found. \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
+
+# Test ReSpeaker audio recording
+echo "Testing ReSpeaker audio recording with arecord..."
+WAV_PATH="/tmp/test.wav"
+rm -f "$WAV_PATH"
+if [ -n "$CARD_NUM" ]; then
+	arecord -Dplughw:$CARD_NUM -d 2 -f cd -t wav -r 16000 -c 1 "$WAV_PATH" > /dev/null 2>&1
+	if [ -f "$WAV_PATH" ]; then
+		echo -e "OK: Audio recording succeeded, $WAV_PATH exists. \e[32m✔\e[0m"
+	else
+		echo -e "ERROR: Audio recording failed, $WAV_PATH does not exist. \e[31m✘\e[0m"
+		EXIT_CODE=1
+	fi
+else
+	echo -e "ERROR: ReSpeaker audio card not found for recording. \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
+
 # Check for imx708_wide camera
 if command -v rpicam-vid > /dev/null 2>&1; then
 	CAM_LIST=$(rpicam-vid --list-cam 2>&1)
@@ -73,6 +109,18 @@ if command -v rpicam-vid > /dev/null 2>&1; then
 	fi
 else
 	echo -e "ERROR: rpicam-vid command not found. \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
+
+# Test camera by taking a picture
+echo "Testing camera capture with rpicam-jpeg..."
+PIC_PATH="/tmp/test.jpg"
+rm -f "$PIC_PATH"
+rpicam-jpeg --output "$PIC_PATH" --timeout 200 --width 640 --height 480 > /dev/null 2>&1
+if [ -f "$PIC_PATH" ]; then
+	echo -e "OK: Camera capture succeeded, $PIC_PATH exists. \e[32m✔\e[0m"
+else
+	echo -e "ERROR: Camera capture failed, $PIC_PATH does not exist. \e[31m✘\e[0m"
 	EXIT_CODE=1
 fi
 
@@ -164,12 +212,6 @@ else
 	EXIT_CODE=1
 fi
 
-if [ $EXIT_CODE -eq 0 ]; then
-	echo -e "Image validation PASSED. \e[32m✔\e[0m"
-else
-	echo -e "Image validation FAILED. \e[31m✘\e[0m"
-fi
-
 # Check Xl330 devices with rustypot
 echo "Testing Xl330 devices with rustypot..."
 source /venvs/mini_daemon/bin/activate
@@ -197,6 +239,12 @@ else
 	EXIT_CODE=1
 fi
 rm -f $PYTHON_SCRIPT
+
+if [ $EXIT_CODE -eq 0 ]; then
+	echo -e "Image validation PASSED. \e[32m✔\e[0m"
+else
+	echo -e "Image validation FAILED. \e[31m✘\e[0m"
+fi
 
 exit $EXIT_CODE
 
