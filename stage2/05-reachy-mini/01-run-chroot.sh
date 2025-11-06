@@ -45,6 +45,7 @@ rm -rf /tmp/respeaker_tools
 echo "Setting up restore state..."
 mkdir -p /restore
 cp -r /venvs /restore/
+chmod -R pollen:pollen /restore/
 echo "Restore state set up."
 
 echo "Loading I2C kernel module on boot..."
