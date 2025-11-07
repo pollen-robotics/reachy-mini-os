@@ -18,7 +18,7 @@ source mini_daemon/bin/activate
 echo "Cloning reachy-mini repository..."
 git clone https://github.com/pollen-robotics/reachy_mini.git /venvs/src/reachy_mini
 cd /venvs/src/reachy_mini
-git checkout 1d300bab713677a3bbdf5ede85bd0e4a0ea5ad21
+git checkout bbc2240d6f220b73f6fe76423d59161781bff679
 chown -R pollen:pollen /venvs/src/
 
 echo "Installing Reachy Mini daemon..."
@@ -47,7 +47,7 @@ rm -rf /tmp/respeaker_tools
 echo "Setting up restore state..."
 mkdir -p /restore
 cp -r /venvs /restore/
-chmod -R pollen:pollen /restore/
+chown -R pollen:pollen /restore/
 echo "Restore state set up."
 
 echo "Loading I2C kernel module on boot..."
