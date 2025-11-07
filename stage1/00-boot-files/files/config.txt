@@ -60,7 +60,7 @@ dtparam=ant2
 dtparam=i2c_vc=on
 dtoverlay=i2c-fan,emc2301,i2c_csi_dsi,midtemp=45000,maxtemp=65000
 # Camera
-dtoverlay=imx708,cam1
-dtoverlay=imx708,cam0
+dtoverlay=imx708,rotation=0,cam1
+dtoverlay=imx708,rotation=0,cam0
 # IMU
 dtoverlay=i2c4,pins_8_9=1
