@@ -18,7 +18,7 @@ source mini_daemon/bin/activate
 echo "Cloning reachy-mini repository..."
 git clone https://github.com/pollen-robotics/reachy_mini.git /venvs/src/reachy_mini
 cd /venvs/src/reachy_mini
-git checkout bbc2240d6f220b73f6fe76423d59161781bff679
+git checkout 380-add-pin-code-to-bluetooth
 chown -R pollen:pollen /venvs/src/
 
 echo "Installing Reachy Mini daemon..."
