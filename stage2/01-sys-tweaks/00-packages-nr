@@ -16,6 +16,7 @@ pkg-config
 python3-dev
 libgstreamer-plugins-bad1.0-dev
 libgstreamer-plugins-base1.0-dev
+gstreamer1.0-plugins-base-apps
 libgstreamer1.0-dev
 libglib2.0-dev
 libssl-dev
