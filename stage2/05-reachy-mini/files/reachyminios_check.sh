@@ -47,24 +47,24 @@ for plugin in webrtcsrc webrtcsink; do
 	fi
 done
 
-# Get Reachy Mini Audio version
-if command -v xvf_host > /dev/null 2>&1; then
-	VERSION_OUTPUT=$(xvf_host VERSION 2>&1)
-	VERSION_LINE=$(echo "$VERSION_OUTPUT" | grep '^VERSION')
-	if [ -n "$VERSION_LINE" ]; then
-		echo -e "OK: Reachy Mini Audio VERSION: $VERSION_LINE \e[32m✔\e[0m"
+# Get Reachy Mini Audio version using dfu-util
+if command -v dfu-util > /dev/null 2>&1; then
+	DFU_OUTPUT=$(dfu-util -l 2>/dev/null)
+	VERSION_NUM=$(echo "$DFU_OUTPUT" | grep -m1 'Found DFU:' | sed -n 's/.*ver=\([0-9][0-9]*\),.*/\1/p')
+	if [ -n "$VERSION_NUM" ]; then
+		echo -e "OK: Reachy Mini Audio DFU version: $VERSION_NUM \e[32m✔\e[0m"
 	else
-	echo -e "ERROR: Could not determine Reachy Mini Audio version from xvf_host output. \e[31m✘\e[0m"
+		echo -e "ERROR: Could not determine Reachy Mini Audio version from dfu-util output. \e[31m✘\e[0m"
 		EXIT_CODE=1
 	fi
 else
-	echo -e "ERROR: xvf_host command not found. \e[31m✘\e[0m"
+	echo -e "ERROR: dfu-util command not found. \e[31m✘\e[0m"
 	EXIT_CODE=1
 fi
 
 # Test Reachy Mini Audio audio output
 echo "Testing Reachy Mini Audio audio output..."
-CARD_NUM=$(aplay -l | awk '/Pollen Robotics Reachy Mini Audio/ {for(i=1;i<=NF;i++) if ($i=="card") {val=$(i+1); sub(":$", "", val); print val}}' | head -n1)
+CARD_NUM=$(aplay -l | awk '/Reachy Mini Audio/ {for(i=1;i<=NF;i++) if ($i=="card") {val=$(i+1); sub(":$", "", val); print val}}' | head -n1)
 if [ -n "$CARD_NUM" ]; then
 	echo -e "OK: Found Reachy Mini Audio audio card number: $CARD_NUM \e[32m✔\e[0m"
 	# Set volume to 100% before testing
