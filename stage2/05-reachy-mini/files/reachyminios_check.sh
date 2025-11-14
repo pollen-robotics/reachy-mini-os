@@ -69,7 +69,6 @@ if [ -n "$CARD_NUM" ]; then
 	echo -e "OK: Found Reachy Mini Audio audio card number: $CARD_NUM \e[32m✔\e[0m"
 	# Set volume to 100% before testing
 	if amixer -c $CARD_NUM sset 'PCM' 100% > /dev/null 2>&1 && amixer -c $CARD_NUM sset 'PCM,1' 100% > /dev/null 2>&1; then
-		sudo alsactl store "$CARD_NUM"
 		echo -e "OK: Set volume to 100% for card $CARD_NUM (PCM and PCM,1) \e[32m✔\e[0m"
 	else
 		echo -e "ERROR: Failed to set volume for card $CARD_NUM \e[31m✘\e[0m"
@@ -87,6 +86,13 @@ echo "Testing Reachy Mini Audio audio recording with arecord..."
 WAV_PATH="/tmp/test.wav"
 rm -f "$WAV_PATH"
 if [ -n "$CARD_NUM" ]; then
+	# Set mic volume to 100% for both Headset controls
+	if amixer -c $CARD_NUM sset 'Headset',0 100% > /dev/null 2>&1 && amixer -c $CARD_NUM sset 'Headset',1 100% > /dev/null 2>&1; then
+		echo -e "OK: Set mic volume to 100% for card $CARD_NUM (Headset,0 and Headset,1) \e[32m✔\e[0m"
+	else
+		echo -e "ERROR: Failed to set mic volume for card $CARD_NUM \e[31m✘\e[0m"
+		EXIT_CODE=1
+	fi
 	arecord -Dplughw:$CARD_NUM -d 2 -f cd -t wav -r 16000 -c 1 "$WAV_PATH" > /dev/null 2>&1
 	if [ -f "$WAV_PATH" ]; then
 		echo -e "OK: Audio recording succeeded, $WAV_PATH exists. \e[32m✔\e[0m"
@@ -98,6 +104,10 @@ else
 	echo -e "ERROR: Reachy Mini Audio audio card not found for recording. \e[31m✘\e[0m"
 	EXIT_CODE=1
 fi
+
+# Save volume settings
+echo "Save volume settings..."
+sudo alsactl store "$CARD_NUM"
 
 # Check for imx708_wide camera
 if command -v rpicam-vid > /dev/null 2>&1; then
