@@ -69,6 +69,7 @@ if [ -n "$CARD_NUM" ]; then
 	echo -e "OK: Found Reachy Mini Audio audio card number: $CARD_NUM \e[32m✔\e[0m"
 	# Set volume to 100% before testing
 	if amixer -c $CARD_NUM sset 'PCM' 100% > /dev/null 2>&1 && amixer -c $CARD_NUM sset 'PCM,1' 100% > /dev/null 2>&1; then
+		sudo alsactl store "$CARD_NUM"
 		echo -e "OK: Set volume to 100% for card $CARD_NUM (PCM and PCM,1) \e[32m✔\e[0m"
 	else
 		echo -e "ERROR: Failed to set volume for card $CARD_NUM \e[31m✘\e[0m"
