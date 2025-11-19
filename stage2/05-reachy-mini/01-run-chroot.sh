@@ -25,13 +25,18 @@ echo "Installing Reachy Mini daemon..."
 uv sync --frozen --active --project /venvs/src/reachy_mini --reinstall --extra wireless-version --extra gstreamer
 uv pip install rustypot
 
-mkdir -p /bluetooth
+echo "Setting up Bluetooth, Wireless and GPIO shutdown services..."
 
+mkdir -p /bluetooth
 bash /venvs/src/reachy_mini/src/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh
+
 bash /venvs/src/reachy_mini/src/reachy_mini/daemon/app/services/wireless/install_service.sh
 
+bash /venvs/src/reachy_mini/src/reachy_mini/daemon/app/services/gpio_shutdown/install_service.sh
+
 for service in /etc/systemd/system/reachy-mini-daemon.service \
-               /etc/systemd/system/reachy-mini-bluetooth.service; do
+               /etc/systemd/system/reachy-mini-bluetooth.service \
+                /etc/systemd/system/gpio-shutdown-daemon.service; do
     if [ -f "$service" ]; then
         sed -i 's/^User=root$/User=pollen/' "$service"
     fi
