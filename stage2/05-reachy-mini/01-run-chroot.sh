@@ -18,7 +18,7 @@ source mini_daemon/bin/activate
 echo "Cloning reachy-mini repository..."
 git clone https://github.com/pollen-robotics/reachy_mini.git /venvs/src/reachy_mini
 cd /venvs/src/reachy_mini
-git checkout d7d1ef694a1ccd2dd69faf03add1d3d0e51506e1
+git checkout 5f3ba8ea28271f56742750c8db6429b4211aff7e
 chown -R pollen:pollen /venvs/src/
 
 echo "Installing Reachy Mini daemon..."
