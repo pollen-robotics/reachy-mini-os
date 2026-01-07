@@ -33,3 +33,6 @@ dfu-util
 git
 git-lfs
 i2c-tools
+gstreamer1.0-pipewire
+libspa-0.2-libcamera
+pipewire-audio
