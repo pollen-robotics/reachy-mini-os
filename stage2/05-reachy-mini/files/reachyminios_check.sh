@@ -13,12 +13,9 @@ echo "--------------------------"
 
 # List of required directories
 REQUIRED_DIRS=(
-	"/restore/venvs/src"
 	"/restore/venvs/mini_daemon"
-	"/venvs/src"
 	"/venvs/mini_daemon"
 	"/bluetooth"
-    "/opt/xvf_host_rpi_64bit"
     "/opt/gst-plugins-rs"
     "/opt/uv"
 )
@@ -135,37 +132,6 @@ else
 	EXIT_CODE=1
 fi
 
-# Check that /venvs/src/reachy_mini git working directory is clean
-REACHY_MINI_DIR="/venvs/src/reachy_mini"
-if [ -d "$REACHY_MINI_DIR/.git" ]; then
-	GIT_STATUS=$(git -C "$REACHY_MINI_DIR" status --porcelain)
-	if [ -z "$GIT_STATUS" ]; then
-	echo -e "OK: $REACHY_MINI_DIR git working directory is clean. \e[32m✔\e[0m"
-	else
-	echo -e "ERROR: $REACHY_MINI_DIR git working directory is not clean. \e[31m✘\e[0m" >&2
-		git -C "$REACHY_MINI_DIR" status
-		EXIT_CODE=1
-	fi
-else
-	echo -e "ERROR: $REACHY_MINI_DIR is not a git repository. \e[31m✘\e[0m"
-	EXIT_CODE=1
-fi
-
-# Check that /restore/venvs/src/reachy_mini git working directory is clean
-REACHY_MINI_DIR="/restore/venvs/src/reachy_mini"
-if [ -d "$REACHY_MINI_DIR/.git" ]; then
-	GIT_STATUS=$(git -c safe.directory="$REACHY_MINI_DIR" -C "$REACHY_MINI_DIR" status --porcelain)
-	if [ -z "$GIT_STATUS" ]; then
-	echo -e "OK: $REACHY_MINI_DIR git working directory is clean. \e[32m✔\e[0m"
-	else
-	echo -e "ERROR: $REACHY_MINI_DIR git working directory is not clean. \e[31m✘\e[0m" >&2
-		git -c safe.directory="$REACHY_MINI_DIR" -C "$REACHY_MINI_DIR" status
-		EXIT_CODE=1
-	fi
-else
-	echo -e "ERROR: $REACHY_MINI_DIR is not a git repository. \e[31m✘\e[0m"
-	EXIT_CODE=1
-fi
 
 # Check reachy-mini-bluetooth.service status
 if command -v systemctl > /dev/null 2>&1; then
