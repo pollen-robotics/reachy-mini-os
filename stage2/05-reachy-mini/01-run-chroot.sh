@@ -15,24 +15,17 @@ cd /venvs
 runuser -u pollen -- uv venv mini_daemon --python 3.12
 source mini_daemon/bin/activate
 
-echo "Cloning reachy-mini repository..."
-git clone https://github.com/pollen-robotics/reachy_mini.git /venvs/src/reachy_mini
-cd /venvs/src/reachy_mini
-git checkout 1cf10f5af0ee7d7cd5f58a131468168b07f44104
-chown -R pollen:pollen /venvs/src/
-
 echo "Installing Reachy Mini daemon..."
-uv sync --frozen --active --project /venvs/src/reachy_mini --reinstall --extra wireless-version --extra gstreamer
+uv pip install "reachy-mini[wireless-version,gstreamer]==v1.2.7"
 uv pip install rustypot
 
 echo "Setting up Bluetooth, Wireless and GPIO shutdown services..."
-
 mkdir -p /bluetooth
-bash /venvs/src/reachy_mini/src/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh
+bash "/venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh"
 
-bash /venvs/src/reachy_mini/src/reachy_mini/daemon/app/services/wireless/install_service.sh
+bash "/venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/wireless/install_service.sh"
 
-bash /venvs/src/reachy_mini/src/reachy_mini/daemon/app/services/gpio_shutdown/install_service.sh
+bash "/venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/gpio_shutdown/install_service.sh"
 
 for service in /etc/systemd/system/reachy-mini-daemon.service \
                /etc/systemd/system/reachy-mini-bluetooth.service \
