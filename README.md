@@ -1,4 +1,14 @@
-# pi-gen
+# Reachy Mini ISO for Wireless
+
+This repository contains the necessary files to build a custom Raspberry Pi OS image for the Reachy Mini Wireless robot, using pi-gen. It is used to build the official ISO for Reachy Mini Wireless.
+
+You can find the latest release of the ISO in the [Releases](https://github.com/pollen-robotics/reachy-mini-os/releases).
+
+This ISO can only be used with the Wireless version. No ISO is required for the lite version.
+
+For more information on how to reflash your robot, see https://huggingface.co/docs/reachy_mini/platforms/reachy_mini/reflash_the_rpi_ISO
+
+## pi-gen
 
 Run `sudo ./build.sh` to build a ReachyMini OS. The generated image will be located in the `deploy` directory.
 
