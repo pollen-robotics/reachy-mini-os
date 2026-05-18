@@ -58,7 +58,7 @@ enable_uart=1
 dtparam=ant2
 # Fan i2c
 dtparam=i2c_vc=on
-dtoverlay=i2c-fan,emc2301,i2c_csi_dsi,midtemp=45000,maxtemp=65000
+dtoverlay=i2c-fan,emc2301,i2c_csi_dsi,midtemp=55000,maxtemp=65000
 # Camera
 dtoverlay=imx708,rotation=0,cam1
 dtoverlay=imx708,rotation=0,cam0
