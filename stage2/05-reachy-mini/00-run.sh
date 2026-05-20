@@ -9,6 +9,19 @@ echo "GStreamer plugins installed."
 echo "Setting up udev rules for respeaker mic array..."
 cp files/99-respeaker.rules ${ROOTFS_DIR}/etc/udev/rules.d/
 
+echo "Enabling Git LFS for uv system-wide (issue #56)..."
+# Login shells, PAM sessions, and user-scope systemd.
+grep -qxF 'UV_GIT_LFS=1' "${ROOTFS_DIR}/etc/environment" \
+    || echo 'UV_GIT_LFS=1' >> "${ROOTFS_DIR}/etc/environment"
+# System-scope systemd services (reachy-mini-daemon et al. run as User=pollen
+# at the system level and do NOT inherit /etc/environment).
+install -d -m 0755 "${ROOTFS_DIR}/etc/systemd/system.conf.d"
+cat > "${ROOTFS_DIR}/etc/systemd/system.conf.d/10-uv-git-lfs.conf" <<'EOF'
+# reachy-mini-os#56: make uv respect Git LFS in system services that invoke it.
+[Manager]
+DefaultEnvironment="UV_GIT_LFS=1"
+EOF
+
 echo "Creating VERSION.txt file..."
 rm ${ROOTFS_DIR}/home/pollen/VERSION.txt
 echo "ReachyMiniOS: dev" > ${ROOTFS_DIR}/home/pollen/VERSION.txt
