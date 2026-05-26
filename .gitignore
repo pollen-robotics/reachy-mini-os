@@ -5,5 +5,4 @@ postrun.sh
 #SKIP_IMAGES
 .pc
 *-pc
-
 .vscode/
