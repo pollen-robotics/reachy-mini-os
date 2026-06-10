@@ -36,6 +36,11 @@ cat > "${ROOTFS_DIR}/etc/systemd/system.conf.d/10-uv-git-lfs.conf" <<'EOF'
 DefaultEnvironment="UV_GIT_LFS=1"
 EOF
 
+echo "Installing WirePlumber bluez monitor override (issue #55)..."
+install -d -m 0755 "${ROOTFS_DIR}/etc/wireplumber/wireplumber.conf.d"
+install -m 0644 files/40-force-monitor-bluez.conf \
+    "${ROOTFS_DIR}/etc/wireplumber/wireplumber.conf.d/40-force-monitor-bluez.conf"
+
 echo "Creating VERSION.txt file..."
 rm ${ROOTFS_DIR}/home/pollen/VERSION.txt
 echo "ReachyMiniOS: dev" > ${ROOTFS_DIR}/home/pollen/VERSION.txt
