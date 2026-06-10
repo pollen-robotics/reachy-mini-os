@@ -20,7 +20,6 @@ gstreamer1.0-plugins-base-apps
 libgstreamer1.0-dev
 libglib2.0-dev
 libssl-dev
-gstreamer1.0-libcamera
 librpicam-app1
 libnice10
 gstreamer1.0-plugins-good
@@ -34,5 +33,4 @@ git
 git-lfs
 i2c-tools
 gstreamer1.0-pipewire
-libspa-0.2-libcamera
 pipewire-audio
