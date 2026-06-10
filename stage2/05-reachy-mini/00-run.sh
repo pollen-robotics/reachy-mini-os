@@ -14,7 +14,7 @@ ln -sf libgstpbutils-1.0.so.0.2602.0 ${ROOTFS_DIR}/usr/lib/aarch64-linux-gnu/lib
 echo "Installing custom libcamera"
 tar -xzf files/libcamera_custom.tar.gz -C ${ROOTFS_DIR}/usr/local
 
-echo 'export GST_PLUGIN_PATH=/opt/gst-plugins-rs/lib/aarch64-linux-gnu/:/usr/local/lib/aarch64-linux-gnu/gstreamer-1.0/' >> ${ROOTFS_DIR}/home/pollen/.bashrc
+echo 'export GST_PLUGIN_PATH=$GST_PLUGIN_PATH:/opt/gst-plugins-rs/lib/aarch64-linux-gnu/:/usr/local/lib/aarch64-linux-gnu/gstreamer-1.0/' >> ${ROOTFS_DIR}/home/pollen/.bashrc
 echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/aarch64-linux-gnu/' >> ${ROOTFS_DIR}/home/pollen/.bashrc
 echo 'export LIBCAMERA_IPA_MODULE_PATH=/usr/local/lib/aarch64-linux-gnu/libcamera/ipa' >> ${ROOTFS_DIR}/home/pollen/.bashrc
 echo 'export LIBCAMERA_IPA_CONFIG_PATH=/usr/local/share/libcamera/ipa' >> ${ROOTFS_DIR}/home/pollen/.bashrc
