@@ -1,4 +1,60 @@
 UNRELEASED:
+  *
+2026-04-13:
+  * Passwordless sudo now disabled by default
+  * Switch to enable passwordless sudo added to Control Centre System tab and to raspi-config
+  * New Main Menu tab added to Control Centre to allow editing of main menu; alacarte menu editor removed
+  * Main menu now launches applications using standard gtk-launch code
+  * Run and Shutdown options in main menu now packaged applications instead of hard-coded into menu
+  * New launcher and task list plugins for taskbar; launcher now supports drag and drop to reorganise icons
+  * uBlock Origin Lite and h264ify plugins installed in Chromium by default
+  * cups-browsed printer discovery service now starts and stops with Control Centre rather than running continuously
+  * libpam-gnome-keyring installed to integrate Chromium password management with system password
+  * Desktop tab in Control Centre now allows home folder to be displayed on desktop instead of documents folder
+  * Pulseaudio no longer installed by default; raspi-config option to use it also removed
+  * Direct control of pipewire audio integrated with first-boot wizard
+  * Improved mechanism to detect clicking away from panel popup windows, compatible with Connect
+  * More efficient method for detecting desktop being closed to re-enable power button
+  * Bug fix - keystrokes sometimes being missed when opening search box in main menu
+  * Bug fix - touchscreens not correctly configured by Control Centre under X
+  * Bug fix - opening Control Centre when an SD card was mounted caused the window to be too big
+  * Bug fix - some mouse cursors displaying incorrectly when screen scaling in use
+  * Bug fix - file manager crash when switching TTYs
+  * Bug fix - greeter crash when switching TTYs
+  * Raspberry Pi firmware dce3a7f35498e1a6340748f599e7d74d9001c1fe
+  * Linux kernel 6.12.75 - 89050b1059997d38d55462b323b099a6436dc10d
+2025-12-04:
+  * Added ability to safely eject HDD and NVMe drives connected via USB
+  * Added Alt-F2 shortcut to open run dialog in labwc desktop
+  * Screens control panel no longer creates a default kanshi config file when started
+  * Bug fix - crash when using mounted drives or wastebasket in Places view
+  * Bug fix - crash when unloading system monitor plugin
+  * Bug fix - crash when power-cycling audio devices
+  * Bug fix - Bluetooth plugin icon not being hidden correctly on devices with no Bluetooth hardware
+  * Bug fix - crash in file manager which switching to a TTY
+  * Raspberry Pi firmware 676efed1194de38975889a34276091da1f5aadd3
+  * Linux kernel 6.12.47 - 359f37f0faefb712add32a39f98751aea67d5c1f
+2025-11-24:
+  * Upgrade to version 0.9.2 of labwc
+  * Support for setting HiDPI scaling added to Screens control panel
+  * Support for HiDPI icons added to panel, file manager and various applications
+  * Alacarte menu editor reinstated in image
+  * Pulseaudio removed from image
+  * Icons added to Wayland task switcher
+  * Openbox window appearance changed to match labwc
+  * Volume sliders and calendar popups close when icon clicked
+  * Support for themeing Qt6 applications added
+  * Font selection for Qt5 applications corrected
+  * Control Centre plugin dialogs hidden from taskbar
+  * Correct icons used for external drives
+  * Portuguese translations updated
+  * Chromium updated to version 142.0.7444.162
+  * Firefox updated to version 145.0
+  * Raspberry Pi firmware 676efed1194de38975889a34276091da1f5aadd3
+  * Linux kernel 6.12.47 - 359f37f0faefb712add32a39f98751aea67d5c1f
+  * New Downloads signing key fingerprint:
+    - F4AA DD86 C468 7D69 AE04  543E 796C 114A D12B 2292
+2025-10-01:
   * Based on Debian Trixie release
   * New plugin-based Control Centre application
   * Plugins for same built from existing Raspberry Pi Configuration, Appearance
