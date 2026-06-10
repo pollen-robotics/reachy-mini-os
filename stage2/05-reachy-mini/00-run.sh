@@ -31,6 +31,7 @@ Cmnd_Alias REACHY = \
     /usr/sbin/rfkill unblock bluetooth, \
     /usr/sbin/rfkill unblock wifi, \
     /usr/sbin/shutdown -h now, \
+    /usr/bin/chown pollen\:pollen -R /venvs, \
     /bluetooth/commands/HOTSPOT.sh, \
     /bluetooth/commands/WIFI_RESET.sh, \
     /bluetooth/commands/SOFTWARE_RESET.sh, \
