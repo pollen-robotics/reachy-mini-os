@@ -44,6 +44,57 @@ for plugin in webrtcsrc webrtcsink; do
 	fi
 done
 
+# Check reachy-mini-bluetooth.service status
+if command -v systemctl > /dev/null 2>&1; then
+	SERVICE_STATUS=$(systemctl is-active reachy-mini-bluetooth.service)
+	if [ "$SERVICE_STATUS" = "active" ]; then
+	echo -e "OK: reachy-mini-bluetooth.service is active. \e[32m✔\e[0m"
+	else
+	echo -e "ERROR: reachy-mini-bluetooth.service is not active (status: $SERVICE_STATUS). \e[31m✘\e[0m"
+		EXIT_CODE=1
+	fi
+else
+	echo -e "ERROR: systemctl command not found. \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
+
+# Check reachy-mini-daemon.service status
+if command -v systemctl > /dev/null 2>&1; then
+	SERVICE_STATUS=$(systemctl is-active reachy-mini-daemon.service)
+	if [ "$SERVICE_STATUS" = "active" ]; then
+	echo -e "OK: reachy-mini-daemon.service is active. \e[32m✔\e[0m"
+	else
+	echo -e "ERROR: reachy-mini-daemon.service is not active (status: $SERVICE_STATUS). \e[31m✘\e[0m"
+		EXIT_CODE=1
+	fi
+else
+	echo -e "ERROR: systemctl command not found. \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
+
+## Check daemon API status
+DAEMON_API_URL="http://127.0.0.1:8000/api/daemon/status"
+API_RESPONSE=$(curl -s -X 'GET' "$DAEMON_API_URL" -H 'accept: application/json')
+WIRELESS_VERSION=$(echo "$API_RESPONSE" | grep -o '"wireless_version":true')
+ERROR_NULL=$(echo "$API_RESPONSE" | grep -o '"error":null')
+if [ -n "$WIRELESS_VERSION" ] && [ -n "$ERROR_NULL" ]; then
+	echo -e "OK: Daemon API wireless_version is true and error is null. \e[32m✔\e[0m"
+else
+	echo -e "ERROR: Daemon API check failed. Response: $API_RESPONSE \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
+
+## Release media control
+MEDIA_RELEASE_URL="http://127.0.0.1:8000/api/media/release"
+RELEASE_RESPONSE=$(curl -s -X 'POST' "$MEDIA_RELEASE_URL" -H 'accept: application/json')
+RELEASE_STATUS_OK=$(echo "$RELEASE_RESPONSE" | grep -o '"status":"ok"')
+if [ -n "$RELEASE_STATUS_OK" ]; then
+	echo -e "OK: Media release succeeded. \e[32m✔\e[0m"
+else
+	echo -e "ERROR: Media release failed. Response: $RELEASE_RESPONSE \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
+
 # Get Reachy Mini Audio version using dfu-util
 if command -v dfu-util > /dev/null 2>&1; then
 	DFU_OUTPUT=$(dfu-util -l 2>/dev/null)
@@ -132,32 +183,14 @@ else
 	EXIT_CODE=1
 fi
 
-
-# Check reachy-mini-bluetooth.service status
-if command -v systemctl > /dev/null 2>&1; then
-	SERVICE_STATUS=$(systemctl is-active reachy-mini-bluetooth.service)
-	if [ "$SERVICE_STATUS" = "active" ]; then
-	echo -e "OK: reachy-mini-bluetooth.service is active. \e[32m✔\e[0m"
-	else
-	echo -e "ERROR: reachy-mini-bluetooth.service is not active (status: $SERVICE_STATUS). \e[31m✘\e[0m"
-		EXIT_CODE=1
-	fi
+## Restore media control (acquire)
+MEDIA_ACQUIRE_URL="http://127.0.0.1:8000/api/media/acquire"
+ACQUIRE_RESPONSE=$(curl -s -X 'POST' "$MEDIA_ACQUIRE_URL" -H 'accept: application/json')
+ACQUIRE_STATUS_OK=$(echo "$ACQUIRE_RESPONSE" | grep -o '"status":"ok"')
+if [ -n "$ACQUIRE_STATUS_OK" ]; then
+	echo -e "OK: Media acquire (restore) succeeded. \e[32m✔\e[0m"
 else
-	echo -e "ERROR: systemctl command not found. \e[31m✘\e[0m"
-	EXIT_CODE=1
-fi
-
-# Check reachy-mini-daemon.service status
-if command -v systemctl > /dev/null 2>&1; then
-	SERVICE_STATUS=$(systemctl is-active reachy-mini-daemon.service)
-	if [ "$SERVICE_STATUS" = "active" ]; then
-	echo -e "OK: reachy-mini-daemon.service is active. \e[32m✔\e[0m"
-	else
-	echo -e "ERROR: reachy-mini-daemon.service is not active (status: $SERVICE_STATUS). \e[31m✘\e[0m"
-		EXIT_CODE=1
-	fi
-else
-	echo -e "ERROR: systemctl command not found. \e[31m✘\e[0m"
+	echo -e "ERROR: Media acquire (restore) failed. Response: $ACQUIRE_RESPONSE \e[31m✘\e[0m"
 	EXIT_CODE=1
 fi
 
@@ -177,15 +210,15 @@ if [ $FOUND_MODULE -eq 0 ]; then
 	EXIT_CODE=1
 fi
 
-## Check daemon API status
-DAEMON_API_URL="http://127.0.0.1:8000/api/daemon/status"
-API_RESPONSE=$(curl -s -X 'GET' "$DAEMON_API_URL" -H 'accept: application/json')
-WIRELESS_VERSION=$(echo "$API_RESPONSE" | grep -o '"wireless_version":true')
-ERROR_NULL=$(echo "$API_RESPONSE" | grep -o '"error":null')
-if [ -n "$WIRELESS_VERSION" ] && [ -n "$ERROR_NULL" ]; then
-	echo -e "OK: Daemon API wireless_version is true and error is null. \e[32m✔\e[0m"
+## Stop daemon before Xl330 test
+DAEMON_STOP_URL="http://reachy-mini.local:8000/api/daemon/stop?goto_sleep=false"
+STOP_RESPONSE=$(curl -s -X 'POST' "$DAEMON_STOP_URL" -H 'accept: application/json')
+STOP_STATUS_OK=$(echo "$STOP_RESPONSE" | grep -o '"status":"ok"')
+STOP_JOB_ID=$(echo "$STOP_RESPONSE" | grep -o '"job_id":"[^"]*"')
+if [ -n "$STOP_STATUS_OK" ] || [ -n "$STOP_JOB_ID" ]; then
+	echo -e "OK: Daemon stopped successfully. \e[32m✔\e[0m"
 else
-	echo -e "ERROR: Daemon API check failed. Response: $API_RESPONSE \e[31m✘\e[0m"
+	echo -e "ERROR: Failed to stop daemon. Response: $STOP_RESPONSE \e[31m✘\e[0m"
 	EXIT_CODE=1
 fi
 
@@ -216,6 +249,17 @@ else
 	EXIT_CODE=1
 fi
 rm -f $PYTHON_SCRIPT
+
+## Start daemon after Xl330 test
+DAEMON_START_URL="http://reachy-mini.local:8000/api/daemon/start?wake_up=false"
+START_RESPONSE=$(curl -s -X 'POST' "$DAEMON_START_URL" -H 'accept: application/json')
+START_JOB_ID=$(echo "$START_RESPONSE" | grep -o '"job_id":"[^"]*"')
+if [ -n "$START_JOB_ID" ]; then
+	echo -e "OK: Daemon started successfully. \e[32m✔\e[0m"
+else
+	echo -e "ERROR: Failed to start daemon. Response: $START_RESPONSE \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
 
 # Check IMU
 echo "Testing IMU..."
@@ -253,6 +297,7 @@ EOF
 	fi
 	rm -f $PYTHON_SCRIPT
 fi
+
 
 # Print final result
 if [ $EXIT_CODE -eq 0 ]; then
