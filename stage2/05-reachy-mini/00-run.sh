@@ -67,7 +67,8 @@ Cmnd_Alias REACHY = \
     /bluetooth/commands/HOTSPOT.sh, \
     /bluetooth/commands/WIFI_RESET.sh, \
     /bluetooth/commands/SOFTWARE_RESET.sh, \
-    /bluetooth/commands/RESTART_DAEMON.sh
+    /bluetooth/commands/RESTART_DAEMON.sh, \
+    /usr/bin/nmcli
 pollen ALL=(root) NOPASSWD: REACHY
 EOF
 chmod 0440 "${ROOTFS_DIR}/etc/sudoers.d/010-pollen-reachy"
