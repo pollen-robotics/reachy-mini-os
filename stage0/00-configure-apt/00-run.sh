@@ -21,6 +21,11 @@ else
 fi
 
 install -m 644 files/raspberrypi-archive-keyring.pgp "${ROOTFS_DIR}/usr/share/keyrings/"
+
+# Pin the kernel to 6.18.33 before any apt op installs/upgrades it (see the file
+# header — 6.18.34 broke BLE advertising). Must land before stage0/02-firmware.
+install -m 644 files/preferences.pin-kernel "${ROOTFS_DIR}/etc/apt/preferences.d/pin-kernel"
+
 on_chroot <<- \EOF
 	ARCH="$(dpkg --print-architecture)"
 	if [ "$ARCH" = "armhf" ]; then
