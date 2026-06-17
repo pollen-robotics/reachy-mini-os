@@ -17,7 +17,7 @@ runuser -u pollen -- uv venv mini_daemon --python 3.12
 source mini_daemon/bin/activate
 
 echo "Installing Reachy Mini daemon..."
-uv pip install "reachy-mini[wireless-version]==v1.8.2"
+uv pip install "reachy-mini[wireless-version]==v1.8.3"
 uv pip install rustypot
 
 echo "Setting up Bluetooth, Wireless and GPIO shutdown services..."
