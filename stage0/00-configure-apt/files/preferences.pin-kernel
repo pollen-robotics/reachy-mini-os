@@ -1,0 +1,11 @@
+# Pin the Raspberry Pi kernel to 6.18.33.
+#
+# 6.18.34 broke BLE advertising on Reachy Mini, so the kernel must stay at
+# 6.18.33 even though stage0/00-configure-apt runs `apt-get dist-upgrade -y`
+# and later stages install/upgrade packages. This pin keeps every kernel
+# image/header package at the 6.18.33-1+rpt1 release and refuses any newer
+# candidate (Pin-Priority 1001 > 1000 also allows a downgrade if a newer one
+# already slipped in).
+Package: linux-image-* linux-headers-* linux-kbuild-*
+Pin: version 1:6.18.33-1+rpt1
+Pin-Priority: 1001
