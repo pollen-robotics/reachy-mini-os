@@ -1,0 +1,51 @@
+name: Mirror release to Hugging Face
+
+# Mirrors ReachyMiniOS release assets to the Hugging Face dataset
+# `pollen-robotics/reachy-mini-os`, whose xet/LFS CDN is much faster to pull
+# than GitHub release downloads. The desktop flasher reads `latest.json` from
+# that dataset and downloads the image from there (GitHub stays as a fallback).
+#
+# Trigger: runs after "Generate ReachyMini OS Image" finishes (a release
+# published by the default GITHUB_TOKEN does NOT emit a `release` event, so we
+# key off the build workflow instead). Also runnable manually to backfill a tag.
+#
+# Setup (once): add a repo secret `HF_TOKEN` = a Hugging Face write token that
+# can push to the `pollen-robotics/reachy-mini-os` dataset.
+
+on:
+  workflow_run:
+    workflows: ["Generate ReachyMini OS Image"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to mirror (defaults to the latest release)"
+        required: false
+
+concurrency:
+  group: mirror-to-hf
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    # For workflow_run, only mirror after a successful build.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install "huggingface_hub[hf_xet]>=0.25" requests
+
+      - name: Mirror assets to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          HF_DATASET: pollen-robotics/reachy-mini-os
+          RELEASE_TAG: ${{ github.event.inputs.tag }}
+        run: python .github/scripts/mirror_to_hf.py
