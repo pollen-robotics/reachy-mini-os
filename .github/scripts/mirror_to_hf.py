@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
-"""Mirror a built ReachyMiniOS release to a public Hugging Face dataset.
+"""Mirror a built ReachyMiniOS release to a public Hugging Face Storage Bucket.
 
 The desktop flasher (reachy_mini_flasher) downloads the OS image from this
-dataset because the HF xet/LFS CDN is much faster than GitHub releases. It
-locates the current assets through a small ``latest.json`` manifest published at
-the dataset root:
+bucket because the HF xet CDN is much faster and more reliable than GitHub
+release downloads (the main pain point during flashing).
+
+A Storage Bucket (not a dataset) is used on purpose: we only ever need the
+*latest* image, not a versioned git history, so the bucket is written
+overwrite-in-place at fixed paths. Public bucket files are readable anonymously
+over HTTPS at:
+
+    https://huggingface.co/buckets/<namespace>/<name>/resolve/<path>
+
+The flasher locates the current assets through a small ``latest.json`` manifest
+published at the bucket root:
 
     {
       "tag": "v0.2.7",
-      "image": "releases/v0.2.7/image_2026-06-17-reachyminios-v0.2.7.zip",
-      "bmap":  "releases/v0.2.7/2026-06-17-reachyminios-v0.2.7.bmap"
+      "image": "reachyminios.zip",
+      "bmap":  "reachyminios.bmap"
     }
 
-This script uploads the image (and its optional ``.bmap``) under
-``releases/<tag>/`` and then rewrites ``latest.json`` to point at them.
-
 Environment:
-    HF_TOKEN          Write token for the dataset (repository secret).
-    HF_DATASET_REPO   Target dataset, e.g. ``pollen-robotics/reachy-mini-os``.
+    HF_TOKEN          Write token for the bucket namespace (repository secret).
+    HF_BUCKET_REPO    Target bucket, e.g. ``pollen-robotics/reachy-mini-os``.
     TAG               Release tag, e.g. ``v0.2.7``.
     DEPLOY_DIR        Optional; directory with the built assets (default ``deploy``).
 """
@@ -29,10 +35,14 @@ import os
 import sys
 from pathlib import Path
 
-from huggingface_hub import HfApi
+from huggingface_hub import batch_bucket_files, create_bucket, login
 
 # Image extensions the flasher understands, in preference order.
 IMAGE_EXTS = (".img.gz", ".zip", ".img")
+
+# Fixed remote names (overwrite-in-place; the bucket keeps no history).
+IMAGE_STEM = "reachyminios"
+BMAP_NAME = "reachyminios.bmap"
 
 
 def fail(message: str) -> "None":
@@ -46,14 +56,22 @@ def pick(files: list[Path], suffixes: tuple[str, ...]) -> Path | None:
     return None
 
 
+def image_ext(path: Path) -> str:
+    name = path.name.lower()
+    for ext in IMAGE_EXTS:
+        if name.endswith(ext):
+            return ext
+    return path.suffix
+
+
 def main() -> None:
-    repo_id = os.environ.get("HF_DATASET_REPO")
+    repo_id = os.environ.get("HF_BUCKET_REPO")
     tag = os.environ.get("TAG")
     token = os.environ.get("HF_TOKEN")
     deploy_dir = Path(os.environ.get("DEPLOY_DIR", "deploy"))
 
     if not repo_id:
-        fail("HF_DATASET_REPO is not set")
+        fail("HF_BUCKET_REPO is not set")
     if not tag:
         fail("TAG is not set")
     if not token:
@@ -67,39 +85,28 @@ def main() -> None:
         fail(f"no image asset ({'/'.join(IMAGE_EXTS)}) found in {deploy_dir}/")
     bmap = pick(files, (".bmap",))
 
-    api = HfApi(token=token)
-    api.create_repo(repo_id, repo_type="dataset", exist_ok=True, private=False)
+    # Authenticate every subsequent bucket call from HF_TOKEN.
+    login(token=token, add_to_git_credential=False)
 
-    prefix = f"releases/{tag}"
+    # Public bucket; created once, reused (overwritten) on every release.
+    create_bucket(repo_id, private=False, exist_ok=True)
 
-    def upload(path: Path) -> str:
-        dst = f"{prefix}/{path.name}"
-        print(f"Uploading {path} -> {dst}", flush=True)
-        api.upload_file(
-            path_or_fileobj=str(path),
-            path_in_repo=dst,
-            repo_id=repo_id,
-            repo_type="dataset",
-            commit_message=f"Mirror {path.name} ({tag})",
-        )
-        return dst
+    image_remote = f"{IMAGE_STEM}{image_ext(image)}"
+    manifest: dict[str, str] = {"tag": tag, "image": image_remote}
 
-    image_rel = upload(image)
-    bmap_rel = upload(bmap) if bmap else None
+    # Entries are (local path str | raw bytes, remote path).
+    add: list[tuple[object, str]] = [(str(image), image_remote)]
+    print(f"Uploading {image} -> {image_remote}", flush=True)
+    if bmap:
+        add.append((str(bmap), BMAP_NAME))
+        manifest["bmap"] = BMAP_NAME
+        print(f"Uploading {bmap} -> {BMAP_NAME}", flush=True)
 
-    manifest: dict[str, str] = {"tag": tag, "image": image_rel}
-    if bmap_rel:
-        manifest["bmap"] = bmap_rel
+    # latest.json is uploaded from raw bytes in the same batch.
+    manifest_bytes = (json.dumps(manifest, indent=2) + "\n").encode("utf-8")
+    add.append((manifest_bytes, "latest.json"))
 
-    manifest_path = Path("latest.json")
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
-    api.upload_file(
-        path_or_fileobj=str(manifest_path),
-        path_in_repo="latest.json",
-        repo_id=repo_id,
-        repo_type="dataset",
-        commit_message=f"Point latest.json at {tag}",
-    )
+    batch_bucket_files(repo_id, add=add)
 
     print(f"Mirror complete: {manifest}", flush=True)
 
