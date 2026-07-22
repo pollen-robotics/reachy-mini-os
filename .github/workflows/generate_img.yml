@@ -58,39 +58,3 @@ jobs:
         with:
             files: deploy/*
             generate_release_notes: true
-
-  # Mirror the freshly built image to a public Hugging Face Storage Bucket, which
-  # the desktop flasher downloads from (its xet CDN is much faster and more
-  # reliable than GitHub releases). A bucket (not a dataset) is used because we
-  # only need the latest image, not a versioned history: it is overwritten
-  # in place on every release. Runs only for version tags, reusing the artifact
-  # from build-image so nothing is rebuilt.
-  mirror-to-hf:
-    name: Mirror image to Hugging Face
-    needs: build-image
-    runs-on: ubuntu-latest
-    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Download built image artifact
-        uses: actions/download-artifact@v7
-        with:
-            name: reachyminios-image-${{ github.ref_name }}
-            path: deploy
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-            python-version: '3.12'
-
-      - name: Install huggingface_hub
-        run: pip install --upgrade "huggingface_hub>=1.5"
-
-      - name: Push image + manifest to the HF bucket mirror
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_BUCKET_REPO: pollen-robotics/reachy-mini-os
-          TAG: ${{ github.ref_name }}
-        run: python .github/scripts/mirror_to_hf.py
