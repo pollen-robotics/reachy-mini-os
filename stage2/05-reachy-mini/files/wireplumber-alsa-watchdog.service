@@ -1,0 +1,14 @@
+[Unit]
+# Restarts the audio stack if the graph still has no ALSA device once boot has
+# settled -- the failure described in 41-force-monitor-alsa.conf. Triggered by
+# the matching .timer. Healthy boots do nothing.
+Description=Restart WirePlumber if the audio graph has no ALSA devices after boot
+After=wireplumber.service pipewire.service pipewire-pulse.service
+Wants=wireplumber.service
+ConditionUser=pollen
+
+[Service]
+Type=oneshot
+# Test for ALSA specifically: v4l2 and Bluetooth objects can fill the graph
+# while every ALSA card is missing.
+ExecStart=/bin/sh -c 'if pw-cli ls Device 2>/dev/null | grep -qi alsa; then echo "audio graph healthy, no action"; else echo "no ALSA devices in audio graph, restarting wireplumber/pipewire"; systemctl --user restart wireplumber pipewire pipewire-pulse; fi'
