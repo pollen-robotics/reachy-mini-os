@@ -36,6 +36,31 @@ for service in /etc/systemd/system/reachy-mini-daemon.service \
     fi
 done
 
+echo "Pre-installing conversation app and default move datasets..."
+runuser -u pollen -- /venvs/mini_daemon/bin/python - <<'PYEOF'
+import asyncio
+import logging
+import sys
+
+from reachy_mini.apps.sources import hf_space
+from reachy_mini.apps.sources.local_common_venv import install_package
+from reachy_mini.motion.recorded_move import DEFAULT_DATASETS, preload_dataset
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("preinstall")
+
+apps = asyncio.run(hf_space.list_available_apps())
+app = next((a for a in apps if a.name == "reachy_mini_conversation_app"), None)
+if app is None:
+    sys.exit("reachy_mini_conversation_app not found in the app store catalog")
+if asyncio.run(install_package(app, logger, wireless_version=True)) != 0:
+    sys.exit("conversation app install failed")
+
+for name in DEFAULT_DATASETS:
+    if preload_dataset(name) is None:
+        sys.exit(f"dataset preload failed: {name}")
+PYEOF
+
 echo "Setting up restore state..."
 mkdir -p /restore
 cp -r /venvs /restore/
