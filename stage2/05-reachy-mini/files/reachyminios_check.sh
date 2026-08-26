@@ -14,7 +14,12 @@ echo "--------------------------"
 # List of required directories
 REQUIRED_DIRS=(
 	"/restore/venvs/mini_daemon"
+	"/restore/venvs/apps_venv"
 	"/venvs/mini_daemon"
+	"/venvs/apps_venv"
+	"/venvs/.app_metadata"
+	"/home/pollen/.cache/huggingface/hub/datasets--pollen-robotics--reachy-mini-emotions-library"
+	"/home/pollen/.cache/huggingface/hub/datasets--pollen-robotics--reachy-mini-dances-library"
 	"/bluetooth"
     "/opt/gst-plugins-rs"
     "/opt/uv"
