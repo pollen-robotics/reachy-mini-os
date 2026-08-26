@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Single source of truth for the SDK version: the daemon venv, the pre-seeded
+# apps_venv and the daemon's own apps_venv sync check must all agree.
+REACHY_MINI_VERSION="1.10.0"
+
 echo "Installing UV tool..."
 rm -Rf /opt/uv
 mkdir -p /opt/uv
@@ -17,7 +21,7 @@ runuser -u pollen -- uv venv mini_daemon --python 3.12
 source mini_daemon/bin/activate
 
 echo "Installing Reachy Mini daemon..."
-uv pip install "reachy-mini[wireless-version]==1.10.0"
+uv pip install "reachy-mini[wireless-version]==${REACHY_MINI_VERSION}"
 uv pip install rustypot
 
 echo "Setting up Bluetooth, Wireless and GPIO shutdown services..."
@@ -37,9 +41,11 @@ for service in /etc/systemd/system/reachy-mini-daemon.service \
 done
 
 echo "Pre-installing conversation app and default move datasets..."
-runuser -u pollen -- /venvs/mini_daemon/bin/python - <<'PYEOF'
+runuser -u pollen -- env "REACHY_MINI_VERSION=${REACHY_MINI_VERSION}" /venvs/mini_daemon/bin/python - <<'PYEOF'
 import asyncio
 import logging
+import os
+import subprocess
 import sys
 
 from reachy_mini.apps.sources import hf_space
@@ -55,6 +61,29 @@ if app is None:
     sys.exit("reachy_mini_conversation_app not found in the app store catalog")
 if asyncio.run(install_package(app, logger, wireless_version=True)) != 0:
     sys.exit("conversation app install failed")
+
+# install_package creates apps_venv with an UNPINNED reachy-mini, so it picks up
+# whatever is latest on PyPI at build time. On every wireless boot the daemon's
+# check_and_sync_apps_venv_sdk() compares that against its own version with
+# exact string equality and reinstalls over the network when they differ - the
+# first-boot download this block exists to avoid. Assert rather than force a
+# downgrade: if the app ever needs a newer SDK than the image ships, that is a
+# call for whoever bumps REACHY_MINI_VERSION, not something to paper over here.
+pin = os.environ["REACHY_MINI_VERSION"]
+seeded = subprocess.run(
+    [
+        "/venvs/apps_venv/bin/python",
+        "-c",
+        "from importlib.metadata import version; print(version('reachy_mini'))",
+    ],
+    capture_output=True,
+    text=True,
+).stdout.strip()
+if seeded != pin:
+    sys.exit(
+        f"apps_venv reachy-mini is '{seeded}', daemon is '{pin}': the daemon "
+        "would resync apps_venv over the network on first boot"
+    )
 
 for name in DEFAULT_DATASETS:
     if preload_dataset(name) is None:
