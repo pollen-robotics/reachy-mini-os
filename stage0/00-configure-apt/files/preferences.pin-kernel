@@ -1,11 +1,11 @@
-# Pin the Raspberry Pi kernel to 6.18.33.
+# Pin the Raspberry Pi kernel to 6.18.39.
 #
-# 6.18.34 broke BLE advertising on Reachy Mini, so the kernel must stay at
-# 6.18.33 even though stage0/00-configure-apt runs `apt-get dist-upgrade -y`
-# and later stages install/upgrade packages. This pin keeps every kernel
-# image/header package at the 6.18.33-1+rpt1 release and refuses any newer
-# candidate (Pin-Priority 1001 > 1000 also allows a downgrade if a newer one
-# already slipped in).
+# Pinned for reproducible builds: stage0/00-configure-apt runs `apt-get
+# dist-upgrade -y` and later stages install/upgrade packages, so an unpinned
+# kernel floats to whatever is latest at build time. That is how v0.2.6 shipped
+# 6.18.34, which broke BLE advertising (fixed upstream in 6.18.36, verified on
+# hardware with 6.18.39). Pin-Priority 1001 > 1000 also allows a downgrade if a
+# newer one already slipped in.
 Package: linux-image-* linux-headers-* linux-kbuild-*
-Pin: version 1:6.18.33-1+rpt1
+Pin: version 1:6.18.39-1+rpt1
 Pin-Priority: 1001
