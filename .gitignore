@@ -6,3 +6,7 @@ postrun.sh
 .pc
 *-pc
 .vscode/
+# Downloaded at build time by stage2/05-reachy-mini/00-run.sh (see
+# files/gst-plugins-rs.pin). Must stay ignored: .gitattributes routes *.gz to
+# LFS, so an unignored copy would silently re-enter LFS on a careless git add.
+stage2/05-reachy-mini/files/gst-plugins-rs-rpi.tar.gz
