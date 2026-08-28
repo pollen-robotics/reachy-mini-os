@@ -18,6 +18,12 @@ on:
         description: "gst-plugins-rs git tag to build"
         required: true
         default: "gstreamer-1.29.2"
+  # Temporary: workflow_dispatch only works once this file is on the default
+  # branch, so bootstrap the first run from the feature branch. Remove after
+  # the gst-plugins-rs-gstreamer-1.29.2 release exists.
+  push:
+    branches:
+      - 88-build-gst-plugins-rs-in-ci
 
 permissions:
   contents: write
@@ -27,8 +33,8 @@ jobs:
     runs-on: ubuntu-24.04-arm
     container: debian:trixie
     env:
-      GST_TAG: ${{ inputs.tag }}
-      RELEASE_TAG: gst-plugins-rs-${{ inputs.tag }}
+      GST_TAG: ${{ inputs.tag || 'gstreamer-1.29.2' }}
+      RELEASE_TAG: gst-plugins-rs-${{ inputs.tag || 'gstreamer-1.29.2' }}
       GH_TOKEN: ${{ github.token }}
       DEBIAN_FRONTEND: noninteractive
     steps:
