@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - '*'
+      # Release tags only: gst-plugins-rs-* tags (created by
+      # build-gst-plugins-rs.yml) must not trigger an image build.
+      - 'v*'
 
 jobs:
   build-image:

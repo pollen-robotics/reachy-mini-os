@@ -1,0 +1,97 @@
+name: Build gst-plugins-rs
+
+# Builds the GStreamer Rust plugins the image ships in /opt/gst-plugins-rs
+# (webrtc, rtp, tracers) from a pinned upstream tag, and publishes the result
+# as a release asset (release tag: gst-plugins-rs-<tag>).
+#
+# The image build downloads and sha256-verifies that asset (see
+# stage2/05-reachy-mini/00-run.sh and files/gst-plugins-rs.pin), so this
+# workflow only needs to run again when the pinned tag changes.
+#
+# Runs in a debian:trixie container so the plugins link against the same
+# GStreamer the image runs (trixie 1.26.x), not the Ubuntu host's.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "gst-plugins-rs git tag to build"
+        required: true
+        default: "gstreamer-1.29.2"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    container: debian:trixie
+    env:
+      GST_TAG: ${{ inputs.tag }}
+      RELEASE_TAG: gst-plugins-rs-${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            git curl ca-certificates build-essential pkg-config libssl-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libgstreamer-plugins-bad1.0-dev gstreamer1.0-tools gh
+
+      - name: Skip if the release already exists
+        id: check
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists, nothing to do."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # trixie ships rustc 1.85 but the gstreamer-1.29.2 tag declares
+      # rust-version = "1.92", so use rustup's stable toolchain.
+      - name: Install Rust toolchain
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          "$HOME/.cargo/bin/rustc" --version
+
+      - name: Build plugins
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          . "$HOME/.cargo/env"
+          git clone --depth 1 --branch "$GST_TAG" https://github.com/GStreamer/gst-plugins-rs.git
+          cd gst-plugins-rs
+          cargo build --release --locked \
+            -p gst-plugin-webrtc -p gst-plugin-rtp -p gst-plugin-tracers
+
+      - name: Package
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          PLUGIN_DIR=out/opt/gst-plugins-rs/lib/aarch64-linux-gnu/gstreamer-1.0
+          mkdir -p "$PLUGIN_DIR"
+          for so in libgstrswebrtc.so libgstrsrtp.so libgstrstracers.so; do
+            cp "gst-plugins-rs/target/release/$so" "$PLUGIN_DIR/"
+            strip --strip-all "$PLUGIN_DIR/$so"
+          done
+          # Sanity check: every plugin must register against the container's
+          # GStreamer (same major.minor as the image).
+          for element in webrtcsink webrtcsrc rtpgccbwe; do
+            GST_PLUGIN_PATH="$PWD/$PLUGIN_DIR" gst-inspect-1.0 "$element" > /dev/null
+          done
+          ls -la "$PLUGIN_DIR"
+          tar -czf gst-plugins-rs-rpi.tar.gz -C out opt
+          sha256sum gst-plugins-rs-rpi.tar.gz | tee gst-plugins-rs-rpi.tar.gz.sha256
+
+      - name: Publish release
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          git config --global --add safe.directory '*'
+          gh release create "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "gst-plugins-rs $GST_TAG (aarch64)" \
+            --notes "gst-plugin-webrtc, gst-plugin-rtp and gst-plugin-tracers built from upstream tag \`$GST_TAG\` in a debian:trixie arm64 container (GStreamer 1.26.x), cdylib only, stripped. Consumed by stage2/05-reachy-mini via files/gst-plugins-rs.pin." \
+            gst-plugins-rs-rpi.tar.gz gst-plugins-rs-rpi.tar.gz.sha256
