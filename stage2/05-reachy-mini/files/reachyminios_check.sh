@@ -60,6 +60,16 @@ else
 	EXIT_CODE=1
 fi
 
+# libcamerasrc must expose `sensor-config` (libcamera >= 0.7.1) so the sensor
+# mode can be forced, e.g. to keep the full field of view at a reduced output
+# resolution.
+if gst-inspect-1.0 libcamerasrc 2>/dev/null | grep -qE "^  sensor-config "; then
+	echo -e "OK: libcamerasrc exposes the 'sensor-config' property. \e[32m✔\e[0m"
+else
+	echo -e "ERROR: libcamerasrc has no 'sensor-config' property (libcamera too old). \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
+
 # Check reachy-mini-bluetooth.service status
 if command -v systemctl > /dev/null 2>&1; then
 	SERVICE_STATUS=$(systemctl is-active reachy-mini-bluetooth.service)
