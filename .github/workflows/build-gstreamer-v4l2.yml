@@ -24,12 +24,6 @@ on:
         description: "GStreamer git tag to build (must match the image's runtime version)"
         required: true
         default: "1.26.2"
-  # Temporary: workflow_dispatch resolves the workflow file on the default
-  # branch, so bootstrap the first run from this branch. Removed once the
-  # gstreamer-v4l2-1.26.2 release exists.
-  push:
-    branches:
-      - 90-build-gstreamer-v4l2-in-ci
 
 permissions:
   contents: write

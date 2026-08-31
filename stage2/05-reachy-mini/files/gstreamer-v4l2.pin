@@ -1,0 +1,9 @@
+# Pin for the patched GStreamer libraries overlaid onto the distro packages:
+#   libgstvideo4linux2.so          -> gstreamer1.0-plugins-good
+#   libgstpbutils-1.0.so.0.2602.0  -> libgstreamer-plugins-base1.0-0
+# GSTREAMER_V4L2_TAG must match the GStreamer version the image actually runs
+# (soname compatibility). Built by .github/workflows/build-gstreamer-v4l2.yml;
+# to rebuild, dispatch it with a new tag and update all three values.
+GSTREAMER_V4L2_TAG=1.26.2
+GSTREAMER_V4L2_SHA256=17a6d7452bde7c3087d62d8dc0f9507f8066f5a85a54da804535d9f3d45a52cf
+GSTREAMER_V4L2_URL=https://github.com/pollen-robotics/reachy-mini-os/releases/download/gstreamer-v4l2-1.26.2/gstvideo4linux2_custom.tar.gz

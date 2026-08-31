@@ -14,11 +14,29 @@ echo "${GST_PLUGINS_RS_SHA256}  files/gst-plugins-rs-rpi.tar.gz" | sha256sum -c 
 tar -xzf files/gst-plugins-rs-rpi.tar.gz -C ${ROOTFS_DIR}/
 
 echo "Updating GStreamer libs..."
+# GStreamer 1.26.2 plus four commits that are upstream on main but not on the
+# 1.26 branch: they give v4l2h264enc a runtime-mutable `bitrate` property and
+# automatic H.264 level selection, which webrtcsink needs to drive the hardware
+# encoder. Built by .github/workflows/build-gstreamer-v4l2.yml, pinned in
+# files/gstreamer-v4l2.pin. Delete all of this once the distro ships GStreamer
+# 1.30, which contains them.
+source files/gstreamer-v4l2.pin
+if [ ! -f files/gstvideo4linux2_custom.tar.gz ]; then
+	curl -fL --retry 3 -o files/gstvideo4linux2_custom.tar.gz "${GSTREAMER_V4L2_URL}"
+fi
+echo "${GSTREAMER_V4L2_SHA256}  files/gstvideo4linux2_custom.tar.gz" | sha256sum -c -
 tar -xzf files/gstvideo4linux2_custom.tar.gz -C ${ROOTFS_DIR}/tmp
 mv ${ROOTFS_DIR}/tmp/libgstpbutils-1.0.so.0.2602.0 ${ROOTFS_DIR}/usr/lib/aarch64-linux-gnu/libgstpbutils-1.0.so.0.2602.0
 mv ${ROOTFS_DIR}/tmp/libgstvideo4linux2.so ${ROOTFS_DIR}/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvideo4linux2.so
 ln -sf libgstpbutils-1.0.so.0.2602.0 ${ROOTFS_DIR}/usr/lib/aarch64-linux-gnu/libgstpbutils-1.0.so
 ln -sf libgstpbutils-1.0.so.0.2602.0 ${ROOTFS_DIR}/usr/lib/aarch64-linux-gnu/libgstpbutils-1.0.so.0
+
+# These two files belong to dpkg, and export-image runs `apt-get dist-upgrade`
+# after this stage. Without a hold, the first archive bump past 1.26.2 silently
+# overwrites the overlay and the image loses congestion control with no error.
+on_chroot <<- EOF
+	apt-mark hold gstreamer1.0-plugins-good libgstreamer-plugins-base1.0-0
+EOF
 
 echo "Installing custom libcamera"
 tar -xzf files/libcamera_custom.tar.gz -C ${ROOTFS_DIR}/usr/local

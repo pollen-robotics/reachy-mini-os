@@ -50,6 +50,16 @@ for plugin in webrtcsrc webrtcsink rtpgccbwe; do
 	fi
 done
 
+# The patched v4l2h264enc must expose a `bitrate` property: without it
+# webrtcsink cannot drive the hardware encoder and congestion control is lost.
+# A missing property means an apt upgrade reverted the patched GStreamer libs.
+if gst-inspect-1.0 v4l2h264enc 2>/dev/null | grep -qE "^  bitrate "; then
+	echo -e "OK: v4l2h264enc exposes the 'bitrate' property. \e[32m✔\e[0m"
+else
+	echo -e "ERROR: v4l2h264enc has no 'bitrate' property (patched GStreamer libs missing). \e[31m✘\e[0m"
+	EXIT_CODE=1
+fi
+
 # Check reachy-mini-bluetooth.service status
 if command -v systemctl > /dev/null 2>&1; then
 	SERVICE_STATUS=$(systemctl is-active reachy-mini-bluetooth.service)
