@@ -1,0 +1,138 @@
+name: Build patched GStreamer v4l2 plugin
+
+# Builds the two GStreamer binaries the image overlays onto the distro packages:
+#   libgstvideo4linux2.so            (gst-plugins-good, v4l2h264enc)
+#   libgstpbutils-1.0.so.0.2602.0    (gst-plugins-base, H.264 level helper)
+#
+# They are GStreamer <tag> plus four commits that are upstream on main but not
+# on the 1.26 branch. Together they give v4l2h264enc a runtime-mutable
+# `bitrate` property and automatic H.264 level selection, which is what lets
+# webrtcsink drive the hardware encoder (pollen-robotics/reachy_mini#1382).
+#
+# All four ship in GStreamer 1.30. When Debian/rpt reaches 1.30, delete this
+# workflow, the pin, the release and the overlay in stage2/05-reachy-mini.
+#
+# Safe to build from vanilla upstream: none of the distro patches touch the two
+# libraries we replace. The rpt patches on gst-plugins-base are confined to
+# gst-libs/gst/{video,gl} (plus a CVE fix in riff), and Debian's
+# gst-plugins-good patches never touch sys/v4l2.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "GStreamer git tag to build (must match the image's runtime version)"
+        required: true
+        default: "1.26.2"
+  # Temporary: workflow_dispatch resolves the workflow file on the default
+  # branch, so bootstrap the first run from this branch. Removed once the
+  # gstreamer-v4l2-1.26.2 release exists.
+  push:
+    branches:
+      - 90-build-gstreamer-v4l2-in-ci
+
+permissions:
+  contents: write
+
+env:
+  # Upstream commits, oldest first. Verified to cherry-pick cleanly onto 1.26.2.
+  #   46037ef2ab v4l2videoenc: Add bitrate and gop-size GObject properties with runtime mutability
+  #   185c6816c9 pbutils: Add gst_codec_utils_h264_get_level_limits() helper
+  #   9e3e775378 v4l2videoenc: Add automatic H.264 level calculation via codec ops
+  #   d7d5984716 v4l2videoenc: synchronize caps with final H.264 level
+  BACKPORT_COMMITS: "46037ef2ab 185c6816c9 9e3e775378 d7d5984716"
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    container: debian:trixie
+    env:
+      GST_TAG: ${{ inputs.tag || '1.26.2' }}
+      RELEASE_TAG: gstreamer-v4l2-${{ inputs.tag || '1.26.2' }}
+      GH_TOKEN: ${{ github.token }}
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            git ca-certificates build-essential meson ninja-build pkg-config \
+            bison flex libglib2.0-dev liborc-0.4-dev libgudev-1.0-dev gettext \
+            python3 binutils gh
+
+      - name: Skip if the release already exists
+        id: check
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists, nothing to do."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Clone and backport
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          git clone --quiet --branch "$GST_TAG" --single-branch \
+            https://gitlab.freedesktop.org/gstreamer/gstreamer.git gstreamer
+          cd gstreamer
+          git fetch --quiet origin main
+          git config user.email "ci@pollen-robotics.com"
+          git config user.name "reachy-mini-os CI"
+          for c in $BACKPORT_COMMITS; do
+            git cherry-pick -x "$c"
+          done
+          git log --oneline -n 5
+
+      - name: Build
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          cd gstreamer
+          # Only two artefacts are needed: libgstpbutils (a core lib of -base,
+          # always built) and the v4l2 plugin from -good. auto_features=disabled
+          # keeps meson from pulling in every optional codec, and nofallback
+          # stops it downloading subprojects (ogg, opus, pango, harfbuzz...).
+          meson setup build \
+            --wrap-mode=nofallback \
+            -Dauto_features=disabled \
+            -Dbase=enabled -Dgood=enabled \
+            -Dbad=disabled -Dugly=disabled -Dlibav=disabled -Drtsp_server=disabled \
+            -Ddevtools=disabled -Dges=disabled -Dpython=disabled -Dsharp=disabled \
+            -Drs=disabled -Dvaapi=disabled -Dgst-examples=disabled \
+            -Dexamples=disabled -Dtests=disabled -Dintrospection=disabled -Ddoc=disabled \
+            -Dgst-plugins-good:v4l2=enabled \
+            -Dgst-plugins-good:v4l2-gudev=enabled
+          ninja -C build \
+            subprojects/gst-plugins-base/gst-libs/gst/pbutils/libgstpbutils-1.0.so.0.2602.0 \
+            subprojects/gst-plugins-good/sys/v4l2/libgstvideo4linux2.so
+
+      - name: Package
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          cd gstreamer
+          PB=$(find build -name "libgstpbutils-1.0.so.0.2602.0" | grep -v '\.p/' | head -1)
+          V4L2=$(find build -name "libgstvideo4linux2.so" | grep -v '\.p/' | head -1)
+          test -n "$PB" && test -n "$V4L2"
+          # The overlay replaces distro files, so the soname must match exactly.
+          readelf -d "$PB" | grep -m1 SONAME
+          # Fail loudly if the backport silently did not land.
+          nm -D --defined-only "$PB" | grep -q h264_get_level_limits
+          mkdir -p ../out
+          cp "$PB" "$V4L2" ../out/
+          strip --strip-unneeded ../out/libgstpbutils-1.0.so.0.2602.0 ../out/libgstvideo4linux2.so
+          tar -czf ../gstvideo4linux2_custom.tar.gz -C ../out \
+            libgstvideo4linux2.so libgstpbutils-1.0.so.0.2602.0
+          cd ..
+          sha256sum gstvideo4linux2_custom.tar.gz | tee gstvideo4linux2_custom.tar.gz.sha256
+          ls -la gstvideo4linux2_custom.tar.gz out/
+
+      - name: Publish release
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          git config --global --add safe.directory '*'
+          gh release create "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "GStreamer $GST_TAG v4l2 overlay (aarch64)" \
+            --notes "\`libgstvideo4linux2.so\` and \`libgstpbutils-1.0.so.0.2602.0\` built from GStreamer \`$GST_TAG\` plus the backported commits \`$BACKPORT_COMMITS\` (upstream in 1.29.2, shipping in 1.30), in a debian:trixie arm64 container. Consumed by stage2/05-reachy-mini via files/gstreamer-v4l2.pin." \
+            gstvideo4linux2_custom.tar.gz gstvideo4linux2_custom.tar.gz.sha256
