@@ -10,3 +10,4 @@ postrun.sh
 # files/gst-plugins-rs.pin). Must stay ignored: .gitattributes routes *.gz to
 # LFS, so an unignored copy would silently re-enter LFS on a careless git add.
 stage2/05-reachy-mini/files/gst-plugins-rs-rpi.tar.gz
+stage2/05-reachy-mini/files/gstvideo4linux2_custom.tar.gz
