@@ -1,8 +1,17 @@
 #!/bin/bash
+set -e
 
 echo "Installing GStreamer plugins..."
+# Built by .github/workflows/build-gst-plugins-rs.yml from the tag pinned in
+# files/gst-plugins-rs.pin, published as a release asset. Downloaded here (not
+# in CI) so local builds behave identically; sha256-verified so a bad download
+# fails the build instead of producing a broken image (#78).
+source files/gst-plugins-rs.pin
+if [ ! -f files/gst-plugins-rs-rpi.tar.gz ]; then
+	curl -fL --retry 3 -o files/gst-plugins-rs-rpi.tar.gz "${GST_PLUGINS_RS_URL}"
+fi
+echo "${GST_PLUGINS_RS_SHA256}  files/gst-plugins-rs-rpi.tar.gz" | sha256sum -c -
 tar -xzf files/gst-plugins-rs-rpi.tar.gz -C ${ROOTFS_DIR}/
-# Set environment variable for GStreamer plugins
 
 echo "Updating GStreamer libs..."
 tar -xzf files/gstvideo4linux2_custom.tar.gz -C ${ROOTFS_DIR}/tmp
@@ -78,7 +87,8 @@ on_chroot <<- EOF
 EOF
 
 echo "Creating VERSION.txt file..."
-rm ${ROOTFS_DIR}/home/pollen/VERSION.txt
+# -f: the file only exists when re-running the stage on a cached rootfs
+rm -f ${ROOTFS_DIR}/home/pollen/VERSION.txt
 echo "ReachyMiniOS: dev" > ${ROOTFS_DIR}/home/pollen/VERSION.txt
 echo "Created on: $(date '+%Y-%m-%d')" >> ${ROOTFS_DIR}/home/pollen/VERSION.txt
 echo "VERSION.txt created."

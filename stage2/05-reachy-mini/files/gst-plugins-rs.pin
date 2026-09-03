@@ -1,0 +1,6 @@
+# Pin for the gst-plugins-rs binaries installed into /opt/gst-plugins-rs.
+# Built by .github/workflows/build-gst-plugins-rs.yml (dispatch it with a new
+# tag, then update all three values). Sourced by ../00-run.sh.
+GST_PLUGINS_RS_TAG=gstreamer-1.29.2
+GST_PLUGINS_RS_SHA256=6a9174a98a601cba9096cc18855b6c7929f20e1f3667e64464e4319a8a22a177
+GST_PLUGINS_RS_URL=https://github.com/pollen-robotics/reachy-mini-os/releases/download/gst-plugins-rs-gstreamer-1.29.2/gst-plugins-rs-rpi.tar.gz

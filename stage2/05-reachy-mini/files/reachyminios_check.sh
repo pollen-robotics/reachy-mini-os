@@ -40,7 +40,8 @@ for dir in "${REQUIRED_DIRS[@]}"; do
 done
 
 # Check for GStreamer plugins
-for plugin in webrtcsrc webrtcsink; do
+# rtpgccbwe (gstrsrtp) is what webrtcsink uses for congestion control.
+for plugin in webrtcsrc webrtcsink rtpgccbwe; do
 	if gst-inspect-1.0 "$plugin" > /dev/null 2>&1; then
 	echo -e "OK: GStreamer plugin '$plugin' is present. \e[32m✔\e[0m"
 	else
