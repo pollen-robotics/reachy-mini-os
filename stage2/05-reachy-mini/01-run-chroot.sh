@@ -23,6 +23,8 @@ source mini_daemon/bin/activate
 echo "Installing Reachy Mini daemon..."
 uv pip install "reachy-mini[wireless-version]==${REACHY_MINI_VERSION}"
 uv pip install rustypot
+# Distrusts the compromised eMudhra intermediates (CVE-2026-111943).
+uv pip install "certifi>=2026.10.19"
 
 echo "Setting up Bluetooth, Wireless and GPIO shutdown services..."
 mkdir -p /bluetooth
@@ -89,6 +91,8 @@ for name in DEFAULT_DATASETS:
     if preload_dataset(name) is None:
         sys.exit(f"dataset preload failed: {name}")
 PYEOF
+
+uv pip install --python /venvs/apps_venv/bin/python "certifi>=2026.10.19"
 
 echo "Setting up restore state..."
 mkdir -p /restore
