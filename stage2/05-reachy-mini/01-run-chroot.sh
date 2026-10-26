@@ -2,7 +2,7 @@
 
 # Single source of truth for the SDK version: the daemon venv, the pre-seeded
 # apps_venv and the daemon's own apps_venv sync check must all agree.
-REACHY_MINI_VERSION="1.10.0"
+REACHY_MINI_VERSION="1.13.0"
 
 echo "Installing UV tool..."
 rm -Rf /opt/uv
