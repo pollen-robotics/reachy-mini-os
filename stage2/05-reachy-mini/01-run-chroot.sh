@@ -24,6 +24,17 @@ echo "Installing Reachy Mini daemon..."
 uv pip install "reachy-mini[wireless-version]==${REACHY_MINI_VERSION}"
 uv pip install rustypot
 
+echo "Letting phones re-pair over Bluetooth (JustWorksRepairing = always)..."
+# The BLE setup service needs no encryption, so a phone is only bonded with the
+# robot because its user paired from the phone's settings. Once either side has
+# lost or renewed its keys, BlueZ's default (never) refuses the phone's
+# automatic re-pairing and that phone can't reach the setup service anymore.
+if grep -qE '^#?JustWorksRepairing' /etc/bluetooth/main.conf; then
+    sed -i -E 's/^#?JustWorksRepairing.*/JustWorksRepairing = always/' /etc/bluetooth/main.conf
+else
+    sed -i '/^\[General\]/a JustWorksRepairing = always' /etc/bluetooth/main.conf
+fi
+
 echo "Setting up Bluetooth, Wireless and GPIO shutdown services..."
 mkdir -p /bluetooth
 bash "/venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/bluetooth/install_service_bluetooth.sh"
