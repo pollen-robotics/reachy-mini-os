@@ -105,7 +105,16 @@ if [ -n "$CARD_NUM" ]; then
 		EXIT_CODE=1
 	fi
 	echo "Playing test sound..."
-	timeout 2s speaker-test -Dplughw:$CARD_NUM > /tmp/speaker_test.txt 2>&1
+	# Through the daemon's dmix device (16 kHz, no resampling): the daemon keeps
+	# hw open, so plughw is busy.
+	timeout 2s speaker-test -Dreachymini_audio_sink -c2 -r16000 > /tmp/speaker_test.txt 2>&1
+	# 124: still playing when timeout stopped it.
+	if [ $? -eq 124 ]; then
+		echo -e "OK: Test sound played through reachymini_audio_sink. \e[32m✔\e[0m"
+	else
+		echo -e "ERROR: Test sound failed, see /tmp/speaker_test.txt \e[31m✘\e[0m"
+		EXIT_CODE=1
+	fi
 else
 	echo -e "ERROR: Reachy Mini Audio audio card not found. \e[31m✘\e[0m"
 	EXIT_CODE=1
