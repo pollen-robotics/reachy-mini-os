@@ -11,6 +11,9 @@ chown -R pollen:pollen /opt/uv
 runuser -u pollen -- curl -LsSf https://astral.sh/uv/0.13.5/install.sh | env UV_INSTALL_DIR="/opt/uv" sh
 echo 'export PATH=$PATH:/opt/uv' >> /home/pollen/.bashrc
 source /opt/uv/env
+# Precompile .pyc at install: otherwise the first daemon and app start after a
+# flash or restore compile every module (~20 s on a CM4, #111).
+export UV_COMPILE_BYTECODE=1
 
 echo "Creating Python virtual environment..."
 rm -Rf /venvs
@@ -41,7 +44,7 @@ for service in /etc/systemd/system/reachy-mini-daemon.service \
 done
 
 echo "Pre-installing conversation app and default move datasets..."
-runuser -u pollen -- env "REACHY_MINI_VERSION=${REACHY_MINI_VERSION}" /venvs/mini_daemon/bin/python - <<'PYEOF'
+runuser -u pollen -- env "REACHY_MINI_VERSION=${REACHY_MINI_VERSION}" "UV_COMPILE_BYTECODE=1" /venvs/mini_daemon/bin/python - <<'PYEOF'
 import asyncio
 import logging
 import os
@@ -92,7 +95,8 @@ PYEOF
 
 echo "Setting up restore state..."
 mkdir -p /restore
-cp -r /venvs /restore/
+# -a keeps the mtimes the .pyc are validated against.
+cp -a /venvs /restore/
 chown -R pollen:pollen /restore/
 echo "Restore state set up."
 
