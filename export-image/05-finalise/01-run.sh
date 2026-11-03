@@ -4,6 +4,7 @@ IMG_FILE="${STAGE_WORK_DIR}/${IMG_FILENAME}${IMG_SUFFIX}.img"
 INFO_FILE="${STAGE_WORK_DIR}/${IMG_FILENAME}${IMG_SUFFIX}.info"
 SBOM_FILE="${STAGE_WORK_DIR}/${IMG_FILENAME}${IMG_SUFFIX}.sbom"
 BMAP_FILE="${STAGE_WORK_DIR}/${IMG_FILENAME}${IMG_SUFFIX}.bmap"
+RELEASE_NOTES_FILE="${STAGE_WORK_DIR}/release_notes.txt"
 
 on_chroot <<- EOF
 	update-initramfs -k all -c
@@ -89,6 +90,8 @@ cp "$ROOTFS_DIR/etc/rpi-issue" "$INFO_FILE"
 	dpkg -l --root "$ROOTFS_DIR"
 } >> "$INFO_FILE"
 
+sed -e "s|UNRELEASED|${IMG_DATE}|" files/release_notes.txt > "$RELEASE_NOTES_FILE"
+
 if hash syft 2>/dev/null; then
 	syft scan dir:"${ROOTFS_DIR}" \
 		--base-path="${ROOTFS_DIR}" \
@@ -97,10 +100,14 @@ if hash syft 2>/dev/null; then
 		-o spdx-json="${SBOM_FILE}"
 fi
 
-ROOT_DEV="$(awk "\$2 == \"${ROOTFS_DIR}\" {print \$1}" /etc/mtab)"
-
-unmount "${ROOTFS_DIR}"
-zerofree "${ROOT_DEV}"
+# Prefer fstrim (holes -> sparse bmap); fall back to zerofree if discard is unsupported.
+if fstrim -v "${ROOTFS_DIR}"; then
+	unmount "${ROOTFS_DIR}"
+else
+	ROOT_DEV="$(awk "\$2 == \"${ROOTFS_DIR}\" {print \$1}" /etc/mtab)"
+	unmount "${ROOTFS_DIR}"
+	zerofree "${ROOT_DEV}"
+fi
 
 unmount_image "${IMG_FILE}"
 
@@ -142,3 +149,4 @@ if [ -f "${BMAP_FILE}" ]; then
 	cp "$BMAP_FILE" "$DEPLOY_DIR/"
 fi
 cp "$INFO_FILE" "$DEPLOY_DIR/"
+cp "$RELEASE_NOTES_FILE" "$DEPLOY_DIR/"

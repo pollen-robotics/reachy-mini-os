@@ -46,6 +46,8 @@ jobs:
 
       - name: Rename deploy files with tag
         run: |
+          # Upstream pi-gen's Raspberry Pi OS desktop notes, not ours.
+          sudo rm -f deploy/release_notes.txt
           for f in deploy/*.*; do
             ext="${f##*.}"
             base="${f%.*}"

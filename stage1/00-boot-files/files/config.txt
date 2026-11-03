@@ -48,6 +48,9 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 
+[pi5]
+dtoverlay=nospi10
+
 [all]
 
 # Reachy mini specifics
