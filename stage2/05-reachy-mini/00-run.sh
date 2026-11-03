@@ -108,6 +108,8 @@ echo "VERSION.txt created."
 echo "Installing verification script..."
 cp files/reachyminios_check.sh ${ROOTFS_DIR}/usr/local/bin/reachyminios_check
 chmod +x ${ROOTFS_DIR}/usr/local/bin/reachyminios_check
+cp files/reachyminios_build_check.sh ${ROOTFS_DIR}/usr/local/bin/reachyminios_build_check
+chmod +x ${ROOTFS_DIR}/usr/local/bin/reachyminios_build_check
 
 echo "Installating password configuration script..."
 cp files/config_passwd.sh ${ROOTFS_DIR}/usr/local/bin/config_passwd
