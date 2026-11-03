@@ -249,7 +249,8 @@ echo "Testing IMU..."
 IMU_I2C_ADDRESSES=("18" "69")
 FOUND_ALL=1
 for addr in "${IMU_I2C_ADDRESSES[@]}"; do
-	if i2cdetect -y 4 | grep -q "$addr"; then
+	# i2c-tools installs to /usr/sbin, not on a regular user's PATH.
+	if /usr/sbin/i2cdetect -y 4 | grep -q "$addr"; then
 	echo -e "OK: IMU device found at address $addr on i2c bus 4. \e[32m✔\e[0m"
 	else
 	echo -e "ERROR: IMU device not found at address $addr on i2c bus 4. \e[31m✘\e[0m"
