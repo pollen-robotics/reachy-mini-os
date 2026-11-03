@@ -8,7 +8,7 @@ echo "Installing UV tool..."
 rm -Rf /opt/uv
 mkdir -p /opt/uv
 chown -R pollen:pollen /opt/uv
-runuser -u pollen -- curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/opt/uv" sh
+runuser -u pollen -- curl -LsSf https://astral.sh/uv/0.13.5/install.sh | env UV_INSTALL_DIR="/opt/uv" sh
 echo 'export PATH=$PATH:/opt/uv' >> /home/pollen/.bashrc
 source /opt/uv/env
 
