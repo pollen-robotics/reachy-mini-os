@@ -131,6 +131,9 @@ term() {
 	else
 		log "Build finished"
 	fi
+	if [ -n "${ARCH_TEST_DIR}" ]; then
+		rm -rf "${ARCH_TEST_DIR}"
+	fi
 	unmount "${STAGE_WORK_DIR}"
 	if [ "$STAGE" = "export-image" ]; then
 		for img in "${STAGE_WORK_DIR}/"*.img; do
@@ -235,8 +238,6 @@ export PREV_STAGE_DIR
 export ROOTFS_DIR
 export PREV_ROOTFS_DIR
 export IMG_SUFFIX
-export NOOBS_NAME
-export NOOBS_DESCRIPTION
 export EXPORT_DIR
 export EXPORT_ROOTFS_DIR
 
@@ -257,6 +258,7 @@ if [ "$SETFCAP" != "1" ]; then
 fi
 
 mkdir -p "${WORK_DIR}"
+unset ARCH_TEST_DIR
 trap term EXIT INT TERM
 
 dependencies_check "${BASE_DIR}/depends"
@@ -277,10 +279,16 @@ fi
 echo "Checking native $ARCH executable support..."
 if ! arch-test -n "$ARCH"; then
 	echo "WARNING: Only a native build environment is supported. Checking emulated support..."
-	if ! arch-test "$ARCH"; then
+	# Test in an empty chroot: a binfmt_misc entry without the F flag works here
+	# but fails in every chroot the build makes
+	ARCH_TEST_DIR="$(mktemp -d)"
+	if ! arch-test -c "$ARCH_TEST_DIR" "$ARCH"; then
 		echo "No fallback mechanism found. Ensure your OS has binfmt_misc support enabled and configured."
+		echo "Install qemu-user-binfmt, or qemu-user-static if your distribution's qemu-user binaries are dynamically linked."
 		exit 1
 	fi
+	rm -rf "$ARCH_TEST_DIR"
+	unset ARCH_TEST_DIR
 fi
 
 #check username is valid
@@ -339,14 +347,6 @@ for EXPORT_DIR in ${EXPORT_DIRS}; do
 	source "${EXPORT_DIR}/EXPORT_IMAGE"
 	EXPORT_ROOTFS_DIR=${WORK_DIR}/$(basename "${EXPORT_DIR}")/rootfs
 	run_stage
-	if [ "${USE_QEMU}" != "1" ]; then
-		if [ -e "${EXPORT_DIR}/EXPORT_NOOBS" ]; then
-			# shellcheck source=/dev/null
-			source "${EXPORT_DIR}/EXPORT_NOOBS"
-			STAGE_DIR="${BASE_DIR}/export-noobs"
-			run_stage
-		fi
-	fi
 done
 
 if [ -x "${BASE_DIR}/postrun.sh" ]; then
