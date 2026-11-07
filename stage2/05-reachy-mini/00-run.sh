@@ -62,6 +62,29 @@ install -d -m 0755 "${ROOTFS_DIR}/etc/wireplumber/wireplumber.conf.d"
 install -m 0644 files/40-force-monitor-bluez.conf \
     "${ROOTFS_DIR}/etc/wireplumber/wireplumber.conf.d/40-force-monitor-bluez.conf"
 
+echo "Installing WirePlumber ALSA monitor override..."
+# Same #55 failure class, on the ALSA side: see the comment in the conf file.
+install -m 0644 files/41-force-monitor-alsa.conf \
+    "${ROOTFS_DIR}/etc/wireplumber/wireplumber.conf.d/41-force-monitor-alsa.conf"
+
+echo "Installing WirePlumber audio-graph watchdog (user timer + service)..."
+install -d -m 0755 "${ROOTFS_DIR}/etc/systemd/user" \
+    "${ROOTFS_DIR}/etc/systemd/user/timers.target.wants"
+install -m 0644 files/wireplumber-alsa-watchdog.service \
+    "${ROOTFS_DIR}/etc/systemd/user/wireplumber-alsa-watchdog.service"
+install -m 0644 files/wireplumber-alsa-watchdog.timer \
+    "${ROOTFS_DIR}/etc/systemd/user/wireplumber-alsa-watchdog.timer"
+ln -sf /etc/systemd/user/wireplumber-alsa-watchdog.timer \
+    "${ROOTFS_DIR}/etc/systemd/user/timers.target.wants/wireplumber-alsa-watchdog.timer"
+
+echo "Enabling user lingering for pollen..."
+# PipeWire and WirePlumber are *user* services: without lingering, user@1000
+# runs only while a login session exists, so a headless boot has no audio
+# server at all and every SSH disconnect tears the stack out from under the
+# daemon. Lingering starts user@1000 at boot and keeps it alive.
+install -d -m 0755 "${ROOTFS_DIR}/var/lib/systemd/linger"
+touch "${ROOTFS_DIR}/var/lib/systemd/linger/pollen"
+
 # raspberrypi-sys-mods >= 1:20251028+1 removes /etc/sudoers.d/010_pi-nopasswd
 # (its postinst calls dpkg-maintscript-helper rm_conffile). Reachy creates the
 # pollen user at build time, bypassing the Imager/firstboot userconf flow that

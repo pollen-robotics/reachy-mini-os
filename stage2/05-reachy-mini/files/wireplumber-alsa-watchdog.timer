@@ -1,0 +1,14 @@
+[Unit]
+# Fires the watchdog once, 45 s after the user manager starts (with lingering,
+# effectively boot), which gives the USB hub and sound cards time to settle.
+# The delay is here rather than in a sleep in the service: a sleeping oneshot
+# wanted by default.target holds user@1000 in "activating" for the whole delay.
+Description=Audio-graph watchdog trigger, once boot has settled
+ConditionUser=pollen
+
+[Timer]
+OnStartupSec=45
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
