@@ -15,3 +15,10 @@ for p in cloud-init rpi-connect-lite rpi-update pipewire libopencv-core410 linux
 		exit 1
 	fi
 done
+
+# Units with nothing to do here: e2scrub only checks LVM volumes, tty1 and its
+# keymap/font are a screen console a Wireless doesn't have (serial stays), and
+# the apt timers are no-ops without unattended-upgrades.
+systemctl disable e2scrub_all.timer e2scrub_reap.service getty@tty1.service \
+	console-setup.service keyboard-setup.service \
+	apt-daily.timer apt-daily-upgrade.timer
