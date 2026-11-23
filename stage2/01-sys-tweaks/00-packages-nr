@@ -14,10 +14,7 @@ libcairo2-dev
 libgirepository1.0-dev
 pkg-config
 python3-dev
-libgstreamer-plugins-bad1.0-dev
-libgstreamer-plugins-base1.0-dev
 gstreamer1.0-plugins-base-apps
-libgstreamer1.0-dev
 libglib2.0-dev
 libssl-dev
 librpicam-app1
@@ -32,5 +29,7 @@ dfu-util
 git
 git-lfs
 i2c-tools
-gstreamer1.0-pipewire
-pipewire-audio
+gir1.2-gstreamer-1.0
+gir1.2-gst-plugins-base-1.0
+gir1.2-gst-plugins-bad-1.0
+gir1.2-gudev-1.0
