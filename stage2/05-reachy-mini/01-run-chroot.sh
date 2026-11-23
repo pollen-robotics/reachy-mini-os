@@ -54,6 +54,13 @@ for service in /etc/systemd/system/reachy-mini-daemon.service \
     fi
 done
 
+echo "Seeding apps_venv with the pinned SDK..."
+# Same venv install_package would create, but pinned: it then reuses this one
+# instead of pulling the newest reachy-mini from PyPI (#119).
+runuser -u pollen -- /venvs/mini_daemon/bin/python -m venv /venvs/apps_venv
+runuser -u pollen -- env UV_COMPILE_BYTECODE=1 /opt/uv/uv pip install \
+    --python /venvs/apps_venv/bin/python "reachy-mini==${REACHY_MINI_VERSION}"
+
 echo "Pre-installing conversation app and default move datasets..."
 runuser -u pollen -- env "REACHY_MINI_VERSION=${REACHY_MINI_VERSION}" "UV_COMPILE_BYTECODE=1" /venvs/mini_daemon/bin/python - <<'PYEOF'
 import asyncio
@@ -76,8 +83,8 @@ if app is None:
 if asyncio.run(install_package(app, logger, wireless_version=True)) != 0:
     sys.exit("conversation app install failed")
 
-# install_package creates apps_venv with an UNPINNED reachy-mini, so it picks up
-# whatever is latest on PyPI at build time. On every wireless boot the daemon's
+# apps_venv is seeded with the pinned SDK above, but the app install may still
+# upgrade it if the app requires a newer one. On every wireless boot the daemon's
 # check_and_sync_apps_venv_sdk() compares that against its own version with
 # exact string equality and reinstalls over the network when they differ - the
 # first-boot download this block exists to avoid. Assert rather than force a
